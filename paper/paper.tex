@@ -1,0 +1,263 @@
+\documentclass{article}
+
+% Load basic packages
+\usepackage{balance}
+%\usepackage{graphics}
+%\usepackage{txfonts}
+%\usepackage{mathptmx}
+%\usepackage{enumitem,gensymb}
+%\usepackage{color}
+%\usepackage{booktabs}
+%\usepackage{subfigure}
+%\usepackage{textcomp}
+%\usepackage{float}
+\usepackage{xspace}
+%\usepackage{mathpartir}
+\usepackage{amsmath}
+%\usepackage{amssymb}
+%\usepackage{multirow}
+%\usepackage{siunitx}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{listings}
+\usepackage{tikz}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{physics}
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+
+\lstdefinestyle{style}{
+  basicstyle=\ttfamily\small,
+  numbers=left,
+}
+\lstset{style=style}
+
+% some convenience commands
+\newcommand{\TODO}[1]{{\bf\color{red} #1}}
+\newcommand{\OUTLINE}[1]{{\color{blue} #1}}
+
+% reduce indentation in algorithmic
+\algrenewcommand\algorithmicindent{1em}
+
+% add goto to algorithmic
+\newcommand{\algorithmautorefname}{Algorithm}
+\algnewcommand{\algorithmicgoto}{\textbf{go to}}%
+\algnewcommand{\Goto}[1]{\algorithmicgoto~\ref{#1}}%
+
+% add switch/case
+\algnewcommand\algorithmicswitch{\textbf{switch}}
+\algnewcommand\algorithmiccase{\textbf{case}}
+\algnewcommand\algorithmicassert{\texttt{assert}}
+\algnewcommand\Assert[1]{\State \algorithmicassert(#1)}%
+\algdef{SE}[SWITCH]{Switch}{EndSwitch}[1]{\algorithmicswitch\ #1\ \algorithmicdo}{\algorithmicend\ \algorithmicswitch}%
+\algdef{SE}[CASE]{Case}{EndCase}[1]{\algorithmiccase\ #1}{\algorithmicend\ \algorithmiccase}%
+\algtext*{EndSwitch}%
+\algtext*{EndCase}%
+
+\def\pprw{8.5in}
+\def\pprh{11in}
+\special{papersize=\pprw,\pprh}
+\setlength{\paperwidth}{\pprw}
+\setlength{\paperheight}{\pprh}
+\setlength{\pdfpagewidth}{\pprw}
+\setlength{\pdfpageheight}{\pprh}
+
+\newcommand{\technique}[0]{\textsc{Algorithm~E}\xspace}
+\newcommand{\SSE}[0]{S\textsuperscript{2}E\xspace}
+\newcommand{\KLEE}[0]{\textsc{Klee}\xspace}
+\newcommand{\angr}[0]{\textsc{Angr}\xspace}
+
+\frenchspacing
+\begin{document}
+
+\title{Optimal pursuit by a missile of an evading spacecraft}
+\author{penlu}
+
+\maketitle
+
+\section{Introduction}
+
+A missile and a spacecraft exist in space at a relative distance $d$ and with a
+relative velocity $v$.
+Without loss of generality, suppose the spacecraft begins at rest.
+Suppose the missile has some finite $\Delta$v limit.
+From what initial conditions is it able to intercept the spacecraft?
+
+We do a preliminary investigation of missile guidance in space against an
+accelerating target.
+
+\section{Dimensionality reduction}
+
+The problem is rotationally symmetric. Moreover, the distance can be set to 1
+wlog via a change of units. This means that in the simple case, the problem only
+has two free parameters, which are the missile velocity in a plane.
+
+TODO breaking things down into $(\rho, \sigma, \tau)$ the distance, radial
+velocity, and tangential velocity
+
+TODO drawing a picture
+
+\section{Formulation as a differential game}
+
+We formulate the problem as a differential game and employ the
+Hamilton--Jacobi--Isaacs (HJI) equation to obtain a differential equation constraining
+the value function.
+
+\subsection{The HJI equation}
+
+Let us introduce some notation:
+\begin{enumerate}
+\item $\vec{s}$ is a vector representing the game state, whose elements are
+$(s_1, \dots, s_n)$
+\item $t$ is time
+\item $\phi$ is the pursuer's control
+\item $\psi$ is the evader's control
+\item $\nabla$ is the vector of partial derivatives $\left(\pdv{}{s_1}, \dots,
+\pdv{}{s_n}\right)$
+\item $V(\vec{s}, t)$ is the value function of the game
+\item $F(\vec{s}, t, \phi, \psi)$ is a function representing the system dynamics
+\item $G(\vec{s}, t, \phi, \psi)$ is the cost rate function
+\item $H(\vec{s}, t)$ is the bequest value
+\end{enumerate}
+
+$F$ represents the dynamics of the system via the first-order differential
+equation:
+\begin{equation}
+\dot{\vec{s}} = F(\vec{s}, \phi, \psi)
+\end{equation}
+
+The HJI equation may be written as follows:
+\begin{align}
+\pdv{V(\vec{s}, t)}{t} + \min_{\phi} \max_{\psi} \left[
+  \nabla V(\vec{s}, t) \cdot F(\vec{s}, \phi, \psi) + G(\vec{s}, \phi, \psi)
+\right]
+\end{align}
+subject to the boundary condition $V(\vec{s}, t) = H(\vec{s}, t)$ within the
+capture set.
+TODO more considerations for capture formalism may exist in general?
+
+\subsection{Specializing to the 1M1S game}
+
+We specialize the HJI equation for the case of the missile pursuit game.
+Here, $V$, $F$, and $G$ lack time dependence, and $H$ is zero.
+
+As previously established, the state space $\vec{s}$ is three-dimensional:
+\begin{align}
+\vec{s} = (\rho, \sigma, \tau)
+\end{align}
+where $\rho$ is the distance, $\sigma$ is the radial velocity, and $\tau$ is the
+tangential velocity.
+
+The system dynamics are:
+\begin{align}
+\dot{\vec{s}}
+&= F(\rho, \sigma, \tau, \vec{a}_m, \vec{a}_s) \notag \\
+&= \left(\sigma,
+  \frac{\tau^2}{\rho} + a_{m\sigma} - a_{s\sigma},
+  -\frac{\sigma\tau}{\rho} + a_{m\tau} - a_{s\tau}\right)
+\end{align}
+
+We will also write $\vec{a}_m = \phi$ for the missile's control and $\vec{a}_s =
+\psi$ for the spacecraft's control.
+
+Substituting all of this, the HJI equation for this game is:
+\begin{align}
+\min_{\vec{a}_m} \max_{\vec{a}_s} \left[
+  \pdv{V}{\rho} \sigma
++ \pdv{V}{\sigma} \left(\frac{\tau^2}{\rho} + a_{m\sigma} - a_{s\sigma}\right)
++ \pdv{V}{\tau} \left(-\frac{\sigma\tau}{\rho} + a_{m\tau} - a_{s\tau}\right)
++ ||\vec{a}_m||
+\right] = 0
+\end{align}
+
+I am not really sure how to solve something that looks like that.
+The reason the existence of $\pdv{V}{x}$ terms is problematic for a numerical
+solution is because $\dot{x}$ can be very high: the missile acceleration may be
+effectively infinite.
+Then the Taylor series approximation used in the HJB equation derivation breaks
+down.
+That is, in our case, $V(x(t + dt))$ is not well-approximated as $V(x) +
+\pdv{V}{x} \dot{x} dt$.
+Fortunately, we can actually work with $V(x(t + dt))$ directly, using Bellman's
+original \textit{discrete} principle of optimality.
+
+The idea is that for a given state $\vec{s}$, the value after a single timestep
+had better be the minmax value over states accessible after a single timestep.
+\begin{align}
+V(\vec{s}) = \min_{\vec{a}_m} \max_{\vec{a}_s} \left[
+  V(\vec{s}_\text{next}(\vec{a}_m, \vec{a}_t, dt)) +
+  ||\vec{a}_m||
+\right]
+\end{align}
+
+Here, $\vec{s}_\text{next}$ is basically just $\vec{s} + F(\dots) dt$.
+
+\section{Analysis of acceleration matching}
+
+Acceleration matching is an intuitive strategy that has been proposed and
+analyzed previously. Here we recapitulate the analysis. We repeat the derivation
+of the optimal allocation of $\Delta$v between the boost and terminal stages,
+and the maximum effective range of this missile assuming a $\Delta$v limit.
+
+In the acceleration matching strategy, missile behavior has two stages:
+\begin{enumerate}
+\item Boost phase, in which the missile instantaneously gains some velocity
+$v_\text{boost}$ toward the target.
+\item Terminal phase, in which the missile accelerates to match target
+accelerations. In this stage the missile has some $\Delta$v budget
+$v_\text{term}$.
+\end{enumerate}
+
+Consider the situation where the missile and target begin at time $t = 0$ at a
+distance $D$ apart and 0 relative velocity. Assume the target has an
+acceleration capacity $a$.
+
+In acceleration matching, during the terminal phase, the missile maintains a
+constant closure velocity $v_\text{boost}$, since it thrusts to cancel the
+target acceleration. The time to reach the target $t_\text{hit}$ is given by:
+\begin{equation}
+t_\text{hit} = \frac{D}{v_\text{boost}}
+\end{equation}
+
+The missile is defeated if it runs out of $\Delta$v before reaching the target.
+If the target maintains full acceleration $a$ in any direction, the missile
+$\Delta$v budget runs out in time $t_\text{defeat}$ given by:
+\begin{equation}
+t_\text{defeat} = \frac{v_\text{term}}{a}
+\end{equation}
+
+In order to hit, we require $t_\text{hit} \le t_\text{defeat}$. Using this, we
+can derive the maximum distance $D$ at which the missile may hit the target
+given $v_\text{boost}$, $v_\text{term}$, and $a$:
+\begin{align}
+\frac{D}{v_\text{boost}} &\le \frac{v_\text{term}}{a} \\ \notag
+D &\le \frac{v_\text{term} v_\text{boost}}{a}
+\end{align}
+
+Given a total $\Delta$v budget $v = v_\text{boost} + v_\text{term}$, we may
+select an apportionment that maximizes $D$ by maximizing a quadratic:
+\begin{align}
+v_\text{boost}^* &= \argmax_{v_\text{boost}}
+    \frac{v_\text{boost} (v - v_\text{boost})}{a} \\
+v_\text{boost}^* &= \frac{v}{2}
+\end{align}
+
+Substituting, we obtain the maximum hit distance $D^*$ for a given total
+$\Delta$v budget $v$:
+\begin{equation}
+D^* = \frac{v^2}{4a}
+\end{equation}
+
+\section{Lateral acceleration matching is suboptimal}
+
+We give a simple argument that accelerating longitudinally in the terminal phase
+leads to a longer effective range.
+
+\balance
+
+\newpage
+
+\bibliography{paper}
+
+\end{document}
