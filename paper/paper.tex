@@ -33,6 +33,12 @@
 }
 \lstset{style=style}
 
+% author notes (Justin)
+
+\newcommand{\authnote}[3]{\textcolor{#3}{[{\footnotesize {\bf #1:} { {#2}}}]}}
+\newcommand{\jnote}[1]{\authnote{J}{#1}{blue} }
+\newcommand{\enote}[1]{\authnote{J}{#1}{green} }
+
 % some convenience commands
 \newcommand{\TODO}[1]{{\bf\color{red} #1}}
 \newcommand{\OUTLINE}[1]{{\color{blue} #1}}
@@ -78,14 +84,11 @@
 
 \section{Introduction}
 
-A missile and a spacecraft exist in space at a relative distance $d$ and with a
-relative velocity $v$.
-Without loss of generality, suppose the spacecraft begins at rest.
-Suppose the missile has some finite $\Delta$v limit.
-From what initial conditions is it able to intercept the spacecraft?
-
-We do a preliminary investigation of missile guidance in space against an
-accelerating target.
+A missile and a spacecraft exist in space with some specified distance and
+relative velocity.  The missile's maximum acceleration is $M$ times that of the
+spacecraft.  What is the minimum $\Delta v$ with which the missile can assuredly
+impact an optimally evading spacecraft?  What do the optimal pursuit and evasion
+trajectories look like?
 
 \section{Dimensionality reduction}
 
@@ -94,7 +97,36 @@ wlog via a change of units. This means that in the simple case, the problem only
 has two free parameters, which are the missile velocity in a plane.
 
 TODO breaking things down into $(\rho, \sigma, \tau)$ the distance, radial
-velocity, and tangential velocity
+velocity, and tangential velocity.
+
+\jnote{Added:}
+\renewcommand{\vec}{\mathbf}
+Call the pursuer $A$ and the evader $B$.  Let $\vec{x}_A$
+  denote the position of the
+  pursuer, and $\vec{x}_B$ the position of the evader.  Define $\vec{r} = \vec{x}_B
+  - \vec{x}_A$, $r = | \vec{r} |$, $\vec{v} = \big | \dot{\vec{x}}_B -
+  \dot{\vec{x}}_A \big |$, $v = | \vec{v} |$, and $\theta = \arccos \big ( \vec{r}
+  \cdot \vec{v} \big )$.
+
+  It is clear that (along with the constant scale parameter
+  $a_{\max}$),$(r, v, \theta)$ completely describes the game state.  However, we
+  can go one step further in dimensionality reduction.  By Buckingham's $\pi$
+  theorem, any physically meaningful quantity can depend only on the
+  dimensionless quantities that can be derived from $(r, v, \theta, a_{\max})$,
+  of which there are only two, namely $\kappa := \frac{v^2}{r \cdot a_{\max}}$
+  and $\theta$.
+
+  We care about the following unitless quantities:
+  \begin{enumerate}
+  \item The magnitude of the missile's acceleration, normalized to a unitless
+    quantity by dividing by $a_{\max}$.
+  \item The direction of the missile's acceleration.
+  \item The minimax $\Delta v$ that the missile needs to `catch' the spaceship,
+    normalized to a unitless quantity by dividing by $\sqrt{r \cdot a_{\max}}$.\footnote{Note that we
+      might instead normalize by dividing by $v$, but that introduces the
+      possibility that $v$ is $0$, and anyways is equivalent up to division by $\sqrt{\kappa}$.}
+  \end{enumerate}
+
 
 TODO drawing a picture
 
@@ -261,3 +293,8 @@ leads to a longer effective range.
 \bibliography{paper}
 
 \end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:
