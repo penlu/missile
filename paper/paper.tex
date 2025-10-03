@@ -136,9 +136,7 @@ We wish to understand optimal pursuit and evasion strategies, their resulting
 trajectories, and their costs.  Dually, we wish to understand the ``missile
 capture'' envelope -- the set of initial conditions under which the missile can
 assure (1) occurs while subjecting $\Delta v_P$ to a fixed bound.
-\section{Missile Max-Burns WLOG}
-\jnote{Need to think about this carefully.  I think it should be true that the
-  missile always max burns, but I'm not sure.}
+
 
 \section{Existence of a Finite $\Delta v$ Strategy}
 We claim that even if the missile must commit to its acceleration before the
@@ -166,10 +164,18 @@ $\norm{\frac{\partial V}{\partial \dot{\vec{x}}}} > 1$;
 \end{itemize}
 
 \section{Game Value Differentiability}
-In this section we argue that $V$ is differentiable at any non-zero distance.
+In this section we argue on physical grounds that $V$ is everywhere differentiable.
 \jnote{todo: continuity at least  should follow from scaling down the fact that a missile can
   control relative velocity with finite $\delta v$ and finite time, to
   infinitesimally different states.  differentiability should be similar}
+
+\section{Missile Max-Burn is NOT WLOG}
+Since $V(\vec{x}, \dot{\vec{x}}) \ge 0$ and
+$V(\vec{0}, \dot{\vec{x}}) = \vec{0}$ for all $\vec{x}, \dot{\vec{x}}$, and $V$
+is smooth, it follows that there exists some non-zero $\vec{x}, \dot{\vec{x}}$
+for which $\grad V(\vec{x}, \dot{\vec{x}}) \approx 0$; thus in these states
+accelerating is not worth it for the missile.
+
 
 \section{Defining Equations for the Game Value}
 
@@ -179,8 +185,8 @@ $V$ should be fully determined by the following equations:
 \end{align*}
 and
 \[
-  \frac{\partial V}{\partial \vec{q}} \cdot \dot{\vec{q}} + (1 - \beta) \cdot
-  \left (\norm{\frac{\partial V}{\partial \dot{\vec{q}}}} - 1 \right) = 0
+  \frac{\partial V}{\partial \vec{x}} \cdot \dot{\vec{x}} + (1 - \beta) \cdot
+  \left (\norm{\frac{\partial V}{\partial \dot{\vec{x}}}} - 1 \right) = 0
 \]
 
 
