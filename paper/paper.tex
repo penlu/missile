@@ -121,64 +121,132 @@ The objectives of the missile, in order of decreasing priority, are:
 \begin{enumerate}
 \item To achieve $\vec{x}_P(\tau) = \vec{x}_E(\tau)$
 for some $\tau \ge 0$.
-\item To achieve (1) with minimal ``$\Delta v_P$, where
+\item To achieve (1) with minimal ``delta-V''
 \begin{equation}
   \label{eq:missile-delta-v}
   \Delta v_P \eqdef \int_{0}^\tau \big \| \ddot{\vec{x}}_P(t) \big \| dt.
 \end{equation}
 \item To achieve (1) with minimal $\tau$.
 \end{enumerate}
-The objectives of the spacecraft are precisely the opposite.
+The objectives of the spacecraft are exactly the opposite: maximize $\Delta v_P$, and among all
+maximizing trajectories, maximize $\tau$. (our assumption
+that $\beta < 1$ makes (1) inevitable).
 
 We wish to understand optimal pursuit and evasion strategies, their resulting
 trajectories, and their costs.  Dually, we wish to understand the ``missile
-capture'' envelops that arise from constraining the missile's $\Delta v$ usage
-to a fixed budget.
+capture'' envelope -- the set of initial conditions under which the missile can
+assure (1) occurs while subjecting $\Delta v_P$ to a fixed bound.
+\section{Missile Max-Burns WLOG}
+\jnote{Need to think about this carefully.  I think it should be true that the
+  missile always max burns, but I'm not sure.}
 
-\section{Dimensionality reduction}
-The way we have defined the problem above is clearly overparameterized.  For
-instance, neither of the absolute positions $\vec{x}_P(t)$ and $\vec{x}_E(t)$
-are physically meaningful -- it is the relative position $\vec{r} :=
-\vec{x}_E(t) - \vec{x}_P(t)$ that matters.
+\section{Existence of a Finite $\Delta v$ Strategy}
+We claim that even if the missile must commit to its acceleration before the
+spaceship chooses its acceleration, the missile has a winning strategy whenever
+$\beta < 1$.  \jnote{todo: to see this, note that the missile can control the
+  relative velocities (disk of possible net relative accelerations excludes zero
+  in a direction of missile's choice).  Excess acceleration can then be used to
+  produce closure.}
 
-\jnote{TODO enumerate and justify all the symmetries.}
-
-\jnote{Added:}
-\renewcommand{\vec}{\mathbf}
-Call the pursuer $P$ and the evader $E$.  Let $\vec{x}_P$
-  denote the position of the
-  pursuer, and $\vec{x}_E$ the position of the evader.  Define $\vec{r} = \vec{x}_E
-  - \vec{x}_P$, $r = | \vec{r} |$, $\vec{v} = \big | \dot{\vec{x}}_E -
-  \dot{\vec{x}}_P \big |$, $v = | \vec{v} |$, and $\theta = \arccos \big ( \vec{r}
-  \cdot \vec{v} \big )$.
-
-  It is clear that (along with the constant scale parameter
-  $a_{\max}$),$(r, v, \theta)$ completely describes the game state.  However, we
-  can go one step further in dimensionality reduction.  By Buckingham's $\pi$
-  theorem, any physically meaningful quantity can depend only on the
-  dimensionless quantities that can be derived from $(r, v, \theta, a_{\max})$,
-  of which there are only two, which can be parameterized either as:
-  \begin{itemize}
-  \item  $\kappa := \frac{v}{\sqrt{r \cdot A_P}}$
-  and $\theta$; or
-\item $\kappa_r = \frac{v_r}{\sqrt{r \cdot A_P}}$ and $\kappa_t =
-  \frac{v_t}{\sqrt{r \cdot A_P}}$.
+\section{Existence of a Pure Strategy Nash Equilibrium}
+In this section we observe that in any game state, there is a (unique) equilibrium
+of accelerations, wherein neither missile nor spaceship are incentivized to
+change.  Specifically, the spaceship will accelerate as hard as it can in the
+direction of $\frac{\partial V}{\partial \dot{\vec{x}}}$, and the missile will
+either:
+\begin{itemize}
+\item
+accelerate as hard as it can in the diametrically opposite direction, if
+$\norm{\frac{\partial V}{\partial \dot{\vec{x}}}} > 1$;
+\item not accelerate at all if $\norm{\frac{\partial V}{\partial \dot{\vec{x}}}}
+  < 1$;
+\item accelerate at any (non-negative) amount in the direction of
+  $-\frac{\partial V}{\partial \dot{\vec{x}}}$ if
+  $\norm{\frac{\partial V}{\partial \dot{\vec{x}}}} = 1$.
 \end{itemize}
 
+\section{Game Value Differentiability}
+In this section we argue that $V$ is differentiable at any non-zero distance.
+\jnote{todo: continuity at least  should follow from scaling down the fact that a missile can
+  control relative velocity with finite $\delta v$ and finite time, to
+  infinitesimally different states.  differentiability should be similar}
 
-  We care about the following unitless quantities:
+\section{Defining Equations for the Game Value}
+
+$V$ should be fully determined by the following equations:
+\begin{align*}
+  V(\vec{0}, \dot{\vec{r}}) = 0  \text{ for all $\dot{\vec{r}}$}
+\end{align*}
+and
+\[
+  \frac{\partial V}{\partial \vec{q}} \cdot \dot{\vec{q}} + (1 - \beta) \cdot
+  \left (\norm{\frac{\partial V}{\partial \dot{\vec{q}}}} - 1 \right) = 0
+\]
+
+
+
+\section{Simplification via Symmetries, Nondimensionalization, and Dominated Actions}
+The way we have defined the problem above is clearly overparameterized.  First
+we observe several symmetries\jnote{actually all just facets of Galilean symmetry}:
+\begin{itemize}
+\item Symmetry under fixed translation (absolute position doesn't matter; only the relative
+  position $\vec{r} \eqdef \vec{x}_E - \vec{x}_P$);
+\item Symmetry under constant motion (absolute velocities don't matter; only
+  the relative velocity $\vec{v} \eqdef \dot{\vec{x}}_E - \dot{\vec{x}}_P$);
+\item Isotropy (absolute directions don't matter; only the relative direction
+  $\theta \eqdef \arccos(\frac{\vec{r}}{\| \vec{r} \|} \cdot \frac{\vec{v}}{\|
+    \vec{v}\|})$).
+\end{itemize}
+
+There is one less-obvious symmetry that follows from dimensional analysis (we
+will confirm it explicitly later when we derive the system dynamics).  We are
+interested in the functions $\vec{a}_P$ and $\vec{a}_E$, which output
+accelerations (units $[m \cdot s^{-2}]$) given inputs whose units are either
+distances ($\vec{r}$ has units $[m]$) or velocities ($\vec{v}$ has units
+$[m \cdot s^{-1}]$).  Let's write $\vec{a} = a \hat{\vec{a}}$,
+$\vec{r} = r \hat{\vec{r}}$, and $\vec{v} = v \hat{\vec{v}}$, where $\hat{\vec{a}}$,
+$\hat{\vec{r}}$, and $\hat{\vec{v}}$ are dimensionless unit vectors, and $a$, $r$, and $v$ are scalars that respectively have dimensions of
+acceleration, length, and speed.
+
+Up to dimensionless constant factors, there are two independent ways we can
+construct a scalar with units of acceleration: $A$ and $v^2 / r$.  This means
+that $\vec{a}$.
+
+Up to a dimensionless constant multiplicative factor, $\hat{\vec{a}}$
+must depend only on $\hat{\vec{r}}$ and $\hat{\vec{v}}$ (specifically $\theta$).
+
+
+We also observe that without loss of generality $P$ and $E$ both perform
+only ``in-plane'' burns, i.e. it should hold that $\ddot{\vec{x}}_P \cdot (\vec{r} \times \vec{v})
+= 0$ and $\ddot{\vec{x}}_E \cdot ( \vec{r} \times \vec{v}) = 0$.  \jnote{todo:
+  elaborate}
+My intuition for this is based on the following idea: the
+  differential game should be the limit as $dt \to 0$ of a discrete game in which the
+  following steps are cycled indefinitely:
   \begin{enumerate}
-  \item The magnitude of the missile's acceleration, normalized to a unitless
-    quantity by dividing by $a_{\max}$.
-  \item The direction of the missile's acceleration.
-  \item The minimax $\Delta v$ that the missile needs to `catch' the spaceship,
-    normalized to a unitless quantity by dividing by $\sqrt{r \cdot a_{\max}}$.\footnote{Note that we
-      might instead normalize by dividing by $v$, but that introduces the
-      possibility that $v$ is $0$, and anyways is equivalent up to division by $\sqrt{\kappa}$.}
+  \item Pursuer sets its own acceleration $\vec{a}_P$ as a function of
+    $\vec{x}_P$, $\vec{v}_P$, $\vec{x}_E$, and $\vec{v}_E$.
+  \item Environment first updates
+    $\vec{v}_P \gets \vec{v}_P + \vec{a}_P \cdot dt$ and ``charges'' the pursuer
+    $\| \vec{a}_P \| \cdot dt$.  Then, if $\vec{x}_E$ lies on the line segment
+    connecting $\vec{x}_P$ and $\vec{x}_P + \vec{v}_P \cdot dt$, the pursuer is
+    said to ``capture'' the evader and the game terminates.  Otherwise, the
+    environment updates $\vec{x}_P \gets \vec{x}_P + \vec{v}_p \cdot dt$.
+  \item Evader sets its own accelerations $\vec{a}_E$ as a function of
+    $\vec{x}_P$, $\vec{v}_P$, $\vec{x}_E$, and $\vec{v}_E$.
+  \item Environment ``forward steps'' the positions and velocities of the evader
+    by updating
+    $\vec{v}_E \gets \vec{v}_E + \vec{a}_E \cdot dt$ and then
+    $\vec{x}_E \gets \vec{x}_E + \vec{v}_E \cdot dt$.
   \end{enumerate}
 
-
-TODO drawing a picture
+  At each state, there is a finite \jnote{and well-defined?} number of steps until capture with
+  optimal play.  The WLOG claim follows by induction on this number.  If the
+  prover can capture within a single step, it can certainly do so with an
+  in-plane burn.  \jnote{todo: continue the argument...or actually maybe there's
+  some way to make it trivial using the fact that the end condition can be
+  defined just in terms of in-plane parameters...and that the set of reachable
+  in-plane parameters by either party is largest with in-plane steps}
 
 \section{Formulation as a differential game}
 
@@ -231,7 +299,7 @@ As previously established, the state space $\vec{s}$ is three-dimensional:
 where $\rho$ is the distance, $\sigma$ is the radial velocity, and $\tau$ is the
 tangential velocity.
 
-The system dynamics are:
+The system dynamics are: \jnote{I think this accounts for centrifugal and }
 \begin{align}
 \dot{\vec{s}}
 &= F(\rho, \sigma, \tau, \vec{a}_m, \vec{a}_s) \notag \\
