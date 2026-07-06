@@ -1,23 +1,11 @@
 \documentclass{article}
 % Load basic packages
-\usepackage{balance}
 \usepackage{fullpage}
-%\usepackage{graphics}
-%\usepackage{txfonts}
-%\usepackage{mathptmx}
-%\usepackage{enumitem,gensymb}
-%\usepackage{color}
-%\usepackage{booktabs}
-%\usepackage{subfigure}
-%\usepackage{textcomp}
-%\usepackage{float}
 \usepackage{xspace}
-%\usepackage{mathpartir}
 \usepackage{amsmath}
-\usepackage{cleveref}
-%\usepackage{amssymb}
-%\usepackage{multirow}
-%\usepackage{siunitx}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{xcolor}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage{listings}
@@ -25,7 +13,7 @@
 \usepackage{caption}
 \usepackage{subcaption}
 \usepackage{physics}
-\usepackage{amssymb}
+\usepackage{cleveref}
 
 \DeclareMathOperator*{\argmax}{arg\,max}
 
@@ -72,11 +60,14 @@
 \setlength{\pdfpagewidth}{\pprw}
 \setlength{\pdfpageheight}{\pprh}
 
-\newcommand{\technique}[0]{\textsc{Algorithm~E}\xspace}
-\newcommand{\SSE}[0]{S\textsuperscript{2}E\xspace}
-\newcommand{\KLEE}[0]{\textsc{Klee}\xspace}
-\newcommand{\angr}[0]{\textsc{Angr}\xspace}
 \renewcommand{\vec}[1]{\mathbf{#1}}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{claim}[theorem]{Claim}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
 
 \frenchspacing
 
@@ -87,7 +78,25 @@
 
 \maketitle
 
+\begin{abstract}
+  We study a pursuit--evasion differential game in free space between a
+  missile with acceleration bound $A$ and a spacecraft with acceleration bound
+  $\beta A$, $\beta < 1$, in which the missile seeks point capture at minimum
+  total delta-V.  We show that the missile can always force capture with
+  finite delta-V (even if its feedback law is announced in advance), derive
+  the stationary Hamilton--Jacobi--Isaacs equation characterizing the game
+  value, identify the pointwise saddle structure of the optimal controls
+  (including a nonempty ``coast'' region in which the optimal missile thrust
+  is zero), and use the symmetries of the problem to reduce the value to a
+  function of two dimensionless variables.  We also revisit the classical
+  ``acceleration matching'' guidance policy: we verify its range envelope
+  $D^* = v^2/4a$, exhibit a longitudinal-burn refinement that dominates it
+  from every off-nominal state, and explain why the two coincide exactly on
+  the nominal boost--terminal split.
+\end{abstract}
+
 \section{Problem Statement}
+\label{sec:problem}
 \newcommand{\R}{\mathbb{R}}
 
 Consider a pursuing missile $P$ and an evading spacecraft $E$ in free space.  We
@@ -116,149 +125,487 @@ then defined as the solution to the ODEs
   \ddot{\vec{x}}_E(t) &= \vec{a}_E\big (\vec{x}_P(t), \vec{x}_E(t),
                         \dot{\vec{x}}_P(t), \dot{\vec{x}}_E(t) \big ).
 \end{align}
+(For discontinuous feedback laws the closed-loop ODE need not admit classical
+solutions; a fully rigorous treatment would use Filippov solutions and/or
+nonanticipative strategies in the sense of Elliott--Kalton
+\cite{evanssouganidis1984,bardi1997}.  We work at the level of feedback laws
+and do not belabor this point.)
 
 The objectives of the missile, in order of decreasing priority, are:
 \begin{enumerate}
-\item To achieve $\vec{x}_P(\tau) = \vec{x}_E(\tau)$
-for some $\tau \ge 0$.
+\item To achieve $\vec{x}_P(T) = \vec{x}_E(T)$
+for some $T \ge 0$ (``capture'').
 \item To achieve (1) with minimal ``delta-V''
 \begin{equation}
   \label{eq:missile-delta-v}
-  \Delta v_P \eqdef \int_{0}^\tau \big \| \ddot{\vec{x}}_P(t) \big \| dt.
+  \Delta v_P \eqdef \int_{0}^T \big \| \ddot{\vec{x}}_P(t) \big \| dt.
 \end{equation}
-\item To achieve (1) with minimal $\tau$.
+\item To achieve (1) with minimal capture time $T$.
 \end{enumerate}
 The objectives of the spacecraft are exactly the opposite: maximize $\Delta v_P$, and among all
-maximizing trajectories, maximize $\tau$. (our assumption
-that $\beta < 1$ makes (1) inevitable).
+maximizing trajectories, maximize $T$.  (Our assumption
+that $\beta < 1$ makes (1) attainable with finite $\Delta v_P$ no matter how the
+spacecraft evades; see \cref{thm:finite-dv}.  We denote by
+$V$ the value of the primary game, i.e., the least $\Delta v_P$ the missile can
+guarantee; the time objectives serve only to break ties among
+$\Delta v_P$-optimal strategies.)
 
 We wish to understand optimal pursuit and evasion strategies, their resulting
 trajectories, and their costs.  Dually, we wish to understand the ``missile
 capture'' envelope -- the set of initial conditions under which the missile can
 assure (1) occurs while subjecting $\Delta v_P$ to a fixed bound.
 
+Throughout we work in relative coordinates
+\begin{equation}
+  \vec{r} \eqdef \vec{x}_E - \vec{x}_P, \qquad
+  \vec{v} \eqdef \dot{\vec{x}}_E - \dot{\vec{x}}_P, \qquad
+  \ddot{\vec{r}} = \vec{a}_E - \vec{a}_P,
+\end{equation}
+and write $\rho \eqdef \norm{\vec{r}}$, $\hat{\vec{r}} \eqdef \vec{r}/\rho$.
+Capture is the event $\vec{r}(T) = \vec{0}$.  \Cref{sec:symmetries} justifies
+that $V$ depends only on $(\vec r, \vec v)$, indeed only on three scalars
+derived from them.
 
 \section{Existence of a Finite $\Delta v$ Strategy}
-We claim that even if the missile must commit to its acceleration before the
-spaceship chooses its acceleration, the missile has a winning strategy whenever
-$\beta < 1$.  \jnote{todo: to see this, note that the missile can control the
-  relative velocities (disk of possible net relative accelerations excludes zero
-  in a direction of missile's choice).  Excess acceleration can then be used to
-  produce closure.}
+\label{sec:finite-dv}
 
-\section{Existence of a Pure Strategy Nash Equilibrium}
-In this section we observe that in any game state, there is a (unique) equilibrium
-of accelerations, wherein neither missile nor spaceship are incentivized to
-change.  Specifically, the spaceship will accelerate as hard as it can in the
-direction of $\frac{\partial V}{\partial \dot{\vec{x}}}$, and the missile will
-either:
+We claim that even if the missile must commit to its (state-feedback)
+acceleration law before the spaceship chooses its own, the missile has a
+winning strategy whenever $\beta < 1$.  The underlying mechanism is that the
+missile's acceleration disk strictly contains the spacecraft's: by thrusting at
+full $A$ in a direction $\hat{\vec u}$ of its choice, the missile guarantees a
+net relative acceleration of magnitude at least $(1-\beta)A$ along
+$-\hat{\vec u}$, no matter what the spacecraft does.  The missile can therefore
+steer the \emph{relative velocity} like a one-dimensional double integrator
+with authority $(1-\beta)A$, and excess acceleration can then be used to
+produce closure.
+
+\begin{lemma}[directional dominance]
+  \label{lem:dominance}
+  Fix a unit vector $\hat{\vec u}$ and suppose the missile plays
+  $\vec a_P = A \hat{\vec u}$.  Then for every admissible spacecraft control,
+  \[
+    \dv{t}\big(\vec v \cdot \hat{\vec u}\big)
+    = (\vec a_E - \vec a_P)\cdot \hat{\vec u}
+    \le \beta A - A = -(1-\beta) A .
+  \]
+\end{lemma}
+
+\begin{theorem}
+  \label{thm:finite-dv}
+  There is an absolute constant $C$ such that for every $\beta \in [0,1)$ and
+  every initial relative state $(\vec r, \vec v)$, the missile has a
+  state-feedback strategy -- which may even be announced to the spacecraft in
+  advance -- that guarantees capture with
+  \[
+    \Delta v_P \;\le\; \frac{C}{1-\beta}\Big( \norm{\vec v} + \sqrt{A \rho}
+    \Big),
+    \qquad
+    T \;\le\; \frac{C}{1-\beta}\Big( \frac{\norm{\vec v}}{A} +
+    \sqrt{\rho / A} \Big).
+  \]
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+  The strategy has two phases.
+
+  \emph{Phase 1 (kill the relative velocity).}  While $\vec v \ne \vec 0$ the
+  missile plays $\vec a_P = A \hat{\vec v}$.  By \cref{lem:dominance} with
+  $\hat{\vec u} = \hat{\vec v}$,
+  $\dv*{\norm{\vec v}}{t} \le -(1-\beta)A$, so $\vec v$ is driven to $\vec 0$
+  within time $t_1 \le \norm{\vec v(0)} / ((1-\beta)A)$, at delta-V cost
+  $A t_1 \le \norm{\vec v(0)}/(1-\beta)$.  Meanwhile the separation grows by at
+  most $\norm{\vec v(0)} t_1 \le \norm{\vec v(0)}^2/((1-\beta)A)$.%
+  \footnote{$\hat{\vec v}$ is undefined at $\vec v = \vec 0$; since
+    $\norm{\vec v}$ decreases at a rate bounded away from zero, $\vec v = 0$ is
+    reached in finite time and the strategy switches to Phase 2.  Chattering
+    concerns can be handled with a standard hysteresis band.}
+
+  \emph{Phase 2 (guarded dash).}  Now $\vec v \approx \vec 0$ at some
+  separation $d$.  Let $\vec h \eqdef \vec r \times \vec v$ be the relative
+  angular momentum (per unit mass); note $\dot{\vec h} = \vec r \times
+  (\vec a_E - \vec a_P)$, so the spacecraft can grow $\norm{\vec h}$ at rate at
+  most $\rho \beta A$, while the missile, by devoting transverse thrust
+  authority $\beta A + \eta$ (for a small margin $\eta > 0$) against
+  $\hat{\vec h}$, can always drive $\norm{\vec h}$ back toward $0$ at net rate
+  $\rho\eta$.  The missile runs this transverse containment loop with a
+  deadband, so that $\norm{\vec h} \approx 0$ and hence the tangential relative
+  speed $\tau = \norm{\vec h}/\rho$ stays negligible: the engagement remains
+  effectively collinear, and the centrifugal and Coriolis terms of
+  \cref{sec:hji} are negligible.
+
+  The remaining thrust authority is applied along the (essentially fixed) line
+  of sight.  The key accounting point is that the spacecraft's transverse and
+  radial efforts draw on a common budget: if it spends $e_\perp$ transversely
+  and $e_r$ radially, then $e_\perp^2 + e_r^2 \le (\beta A)^2$.  Since the
+  missile's containment loop only spends transverse thrust
+  $\approx e_\perp + \eta$ when the spacecraft does, the missile's leftover
+  longitudinal authority $\sqrt{A^2 - (e_\perp + \eta)^2}$ always exceeds the
+  spacecraft's radial effort $\sqrt{(\beta A)^2 - e_\perp^2}$ by at least
+  $(1-\beta)A - O(\eta)$, uniformly over the spacecraft's split.  The
+  longitudinal channel is thus a one-dimensional pursuit with guaranteed net
+  closing authority $\gtrsim (1-\beta)A$: the missile boosts to closing speed
+  $\sigma^* \asymp \sqrt{(1-\beta) A d}$, tops up as needed against radial
+  evasion, and reaches $\rho = 0$ in time $O\big(\sqrt{d/((1-\beta)A)}\big)$.
+  Its Phase-2 delta-V is at most the boost cost
+  $O\big(\sigma^*/(1-\beta)\big)$ plus the containment and top-up costs, which
+  run at rate $O(\beta A)$ for the duration; all terms are
+  $O\big(\sqrt{Ad}/(1-\beta)\big)$.  Combining the two phases (and absorbing
+  the Phase-1 separation drift into $d$) gives the stated bounds.  We have not
+  attempted to optimize the constant or the dependence on $(1-\beta)$.
+\end{proof}
+
+\begin{remark}
+  The $\norm{\vec v} + \sqrt{A\rho}$ scaling is exactly what dimensional
+  analysis predicts (\cref{sec:symmetries}): from a distance $\rho$ at rest, the
+  only velocity scale constructible from $\rho$ and $A$ is $\sqrt{A\rho}$.
+  \Cref{sec:matching} shows the sharper upper bound $2\sqrt{\beta A \rho}$ from
+  rest, whose $\beta \to 0$ behavior is much better than the crude bound above.
+\end{remark}
+
+\begin{remark}
+  The strategy above uses only the current state, and its guarantees are
+  worst-case over spacecraft behavior; in particular it retains its guarantee
+  when the spacecraft knows the missile's law (a Stackelberg setting favoring
+  the evader).  Consequently the game has a well-defined finite value $V$, and
+  upper bounds proved by exhibiting missile strategies are legitimate bounds on
+  $V$.
+\end{remark}
+
+\section{Existence of a Pure Strategy Saddle Point in Each State}
+\label{sec:equilibrium}
+
+In this section we observe that at any game state where $V$ is differentiable
+(see \cref{sec:regularity}), the instantaneous game of choosing accelerations
+has a pure-strategy saddle point: neither missile nor spaceship is
+incentivized to deviate unilaterally.  Define the (dimensionless\footnote{$V$
+  has units of velocity and we differentiate with respect to a velocity.})
+costate
+\[
+  \vec\lambda \eqdef \pdv{V}{\vec v} ,
+\]
+where $V = V(\vec r, \vec v)$ is the game value in relative coordinates.  The
+instantaneous Hamiltonian (cf.\ \cref{sec:hji}) is
+\[
+  H(\vec a_P, \vec a_E)
+  = \pdv{V}{\vec r} \cdot \vec v
+  + \vec\lambda \cdot (\vec a_E - \vec a_P)
+  + \norm{\vec a_P},
+\]
+which is \emph{additively separable} in the two controls; hence
+$\min_{\vec a_P} \max_{\vec a_E} H = \max_{\vec a_E} \min_{\vec a_P} H$
+pointwise (Isaacs' minimax condition holds automatically), and the pointwise
+optimizers form a saddle point.  They are:
 \begin{itemize}
-\item
-accelerate as hard as it can in the diametrically opposite direction, if
-$\norm{\frac{\partial V}{\partial \dot{\vec{x}}}} > 1$;
-\item not accelerate at all if $\norm{\frac{\partial V}{\partial \dot{\vec{x}}}}
-  < 1$;
-\item accelerate at any (non-negative) amount in the direction of
-  $-\frac{\partial V}{\partial \dot{\vec{x}}}$ if
-  $\norm{\frac{\partial V}{\partial \dot{\vec{x}}}} = 1$.
+\item the spaceship accelerates at full throttle along the costate,
+  $\vec a_E^* = \beta A \hat{\vec\lambda}$ (any direction if
+  $\vec\lambda = \vec 0$);
+\item the missile
+  \begin{itemize}
+  \item accelerates at full throttle along the costate,
+    $\vec a_P^* = A \hat{\vec\lambda}$, if $\norm{\vec\lambda} > 1$;
+  \item does not accelerate at all if $\norm{\vec\lambda} < 1$;
+  \item accelerates by any amount $c\,\hat{\vec\lambda}$, $c \in [0, A]$, if
+    $\norm{\vec\lambda} = 1$ (the secondary time objective breaks this tie in
+    favor of burning).
+  \end{itemize}
 \end{itemize}
+The interpretation is a marginal cost--benefit comparison: a unit of missile
+delta-V buys a unit change of relative velocity against the costate, worth
+$\norm{\vec\lambda}$ units of $V$; the missile burns exactly when the marginal
+value exceeds the marginal cost $1$.
 
-\section{Game Value Differentiability}
-In this section we argue on physical grounds that $V$ is everywhere differentiable.
-\jnote{todo: continuity at least  should follow from scaling down the fact that a missile can
-  control relative velocity with finite $\delta v$ and finite time, to
-  infinitesimally different states.  differentiability should be similar}
+Two remarks on the structure.  First, note that \emph{both} players thrust in
+the same direction $\hat{\vec\lambda}$: because the missile's thrust enters
+the relative dynamics $\ddot{\vec r} = \vec a_E - \vec a_P$ with a minus sign,
+parallel physical thrusts have opposing effects on the relative state.  (In
+the prototypical tail chase, $\vec\lambda$ has a large component along
+$\hat{\vec r}$: the spacecraft burns away from the missile while the missile
+burns toward the spacecraft -- the same absolute direction.)  Second, the
+saddle point is unique except in the degenerate cases $\vec\lambda = \vec 0$
+(spaceship indifferent) and $\norm{\vec\lambda} = 1$ (missile indifferent);
+the locus $\norm{\vec\lambda} = 1$ is the free boundary between the missile's
+``burn'' and ``coast'' regions (\cref{sec:coast,sec:defining}).
+
+Along saddle-point play, substituting $\vec a_P^*, \vec a_E^*$ into the
+defining equation of \cref{sec:defining} gives
+$\dv*{V}{t} = -\norm{\vec a_P^*}$: the value decreases exactly at the rate the
+missile spends delta-V, as it must.
+
+\section{Regularity of the Game Value}
+\label{sec:regularity}
+
+The original draft of this section claimed that $V$ is everywhere
+differentiable.  That is false as stated: $V$ fails to be even
+\emph{continuous} at the capture set, except on its ``usable part'' in the
+sense of Isaacs \cite{isaacs1965}.  We record the correct statements.
+
+\begin{proposition}[discontinuity on the non-usable boundary]
+  \label{prop:discont}
+  Fix $\vec v$ with $s \eqdef \vec v \cdot \hat{\vec r} > 0$ (receding).  Then
+  for all $\rho > 0$,
+  \[
+    V(\rho \hat{\vec r}, \vec v) \ \ge\ s + \sqrt{2 \beta A \rho} ,
+  \]
+  whereas $V(\vec 0, \vec v) = 0$.  Hence $V$ does not extend continuously to
+  receding states on the capture set.
+\end{proposition}
+
+\begin{proof}
+  Let the spacecraft simply burn $\beta A \hat{\vec u}$ along the fixed initial
+  line-of-sight direction $\hat{\vec u} = \hat{\vec r}(0)$, and let
+  $\xi = \vec r \cdot \hat{\vec u}$.  Capture at time $T$ requires $\xi(T) \le 0$,
+  and
+  \[
+    0 \ge \xi(T) = \rho + s T + \tfrac{1}{2}\beta A T^2
+    - \int_0^T (T - t)\, \vec a_P \cdot \hat{\vec u} \, dt
+    \ \ge\ \rho + s T + \tfrac{1}{2}\beta A T^2 - T \Delta v_P ,
+  \]
+  so $\Delta v_P \ge s + \rho/T + \tfrac{1}{2}\beta A T \ge s + \sqrt{2\beta
+    A \rho}$, minimizing over $T$.
+\end{proof}
+
+A similar barrier exists for ``flyby'' approaches: if $\vec r \to \vec 0$ with
+$\vec v$ transverse to $\vec r$ (large tangential speed $\tau$, small
+time-to-go), converting the flyby into a hit costs a transverse velocity
+change on the order of $\tau$, so $V \not\to 0$ there either.  The states from
+which $V \to 0$ as $\rho \to 0$ are precisely the near-collision-course
+states, with $\vec v$ closing along $-\hat{\vec r}$ and small tangential
+component: this is the usable part of the target set, and it is the only place
+where the boundary condition $V = 0$ may be imposed
+(\cref{sec:defining}).  (The standard alternative is to give the missile a
+positive capture radius $\ell$, which restores continuity up to the target set
+and recovers our game in the limit $\ell \to 0$.)
+
+Away from the capture set the value is well behaved.  \Cref{thm:finite-dv}
+provides a modulus of continuity by strategy adaptation: from a perturbed
+state $(\vec r + \delta\vec r, \vec v + \delta\vec v)$, the missile can first
+steer the perturbation to zero relative to a shadow trajectory that plays
+optimally from $(\vec r, \vec v)$ -- by \cref{thm:finite-dv} applied to the
+difference system this costs
+$O\big((\norm{\delta \vec v} + \sqrt{A \norm{\delta \vec r}})/(1-\beta)\big)$
+-- and then follow the shadow's optimal play.  Hence, locally uniformly on
+$\{\rho > 0\}$,
+\[
+  \abs{V(\vec r + \delta \vec r, \vec v + \delta \vec v) - V(\vec r, \vec v)}
+  \ \le\ \frac{C}{1-\beta} \Big( \norm{\delta \vec v} + \sqrt{A
+    \norm{\delta\vec r}} \Big):
+\]
+$V$ is Lipschitz in velocity and H\"older-$\tfrac12$ in position.  We expect
+(but do not prove) that $V$ is in fact $C^1$ off a lower-dimensional union of
+singular surfaces (switching and dispersal surfaces), as is typical in
+differential games; across such surfaces the gradient may jump.  Accordingly,
+all gradient-based statements in this paper (\cref{sec:equilibrium,sec:defining})
+should be read as holding where $V$ is differentiable, and the defining PDE
+should be interpreted globally in the viscosity sense
+\cite{crandalllions1983,evanssouganidis1984,bardi1997}.
 
 \section{Missile Max-Burn is NOT WLOG}
-Since $V(\vec{x}, \dot{\vec{x}}) \ge 0$ and
-$V(\vec{0}, \dot{\vec{x}}) = \vec{0}$ for all $\vec{x}, \dot{\vec{x}}$, and $V$
-is smooth, it follows that there exists some non-zero $\vec{x}, \dot{\vec{x}}$
-for which $\grad V(\vec{x}, \dot{\vec{x}}) \approx 0$; thus in these states
-accelerating is not worth it for the missile.
+\label{sec:coast}
 
+It is tempting to assume that the missile should always thrust at full
+throttle (as is WLOG in the pure time-optimal game).  For the delta-V
+objective this is false: the state space contains a nonempty \emph{coast
+  region} -- namely $\{\norm{\vec\lambda} < 1\}$ in the language of
+\cref{sec:equilibrium} -- in which the optimal missile thrust is zero.
+
+\begin{proposition}
+  \label{prop:coast}
+  Consider collision-course states: $\vec v = -\sigma_0 \hat{\vec r}$ with
+  closing speed $\sigma_0 > 0$, separation $\rho$, and time-to-go
+  $t_{go} = \rho / \sigma_0$.  In the regime
+  $\sigma_0 \gg \max\big(\sqrt{A\rho},\, \beta A t_{go}\big)$:
+  \begin{enumerate}
+  \item $V \le \beta A t_{go} (1 + o(1))$; but
+  \item every strategy that always burns at full throttle until capture incurs
+    $\Delta v_P \ge A t_{go} (1 - o(1))$.
+  \end{enumerate}
+  Since $\beta < 1$, max-burn is strictly suboptimal at all sufficiently high
+  closing speeds.
+\end{proposition}
+
+\begin{proof}[Proof sketch]
+  (1) The missile uses the transverse containment loop of
+  \cref{thm:finite-dv} (spend rate at most $\beta A + \eta$, and only while
+  the spacecraft spends transversely) and ignores radial evasion entirely.
+  Radial evasion at $\beta A$ changes the closing speed by at most
+  $\beta A t \ll \sigma_0$, so capture occurs at time $t_{go}(1 + o(1))$, for a
+  total spend of at most $\beta A t_{go} (1 + o(1))$.
+
+  (2) Under any controls, closure speed can increase at rate at most
+  $(1+\beta)A$, so the capture time $t_c$ satisfies
+  $\rho \le \sigma_0 t_c + \tfrac12 (1+\beta) A t_c^2$, giving
+  $t_c \ge t_{go}\big(1 - O(A\rho/\sigma_0^2)\big) = t_{go}(1 - o(1))$.  A
+  max-burn strategy spends $A t_c$.
+\end{proof}
+
+Two corollaries of the picture.  First, in the extreme case $\beta = 0$, a
+missile on an exact collision course has $V = 0$ and \emph{any} burn is
+strictly wasteful.  Second, in terms of the costate: along these
+high-closing-speed collision courses $V \approx c_\beta\, \beta A \rho /
+\sigma$, so $\norm{\vec\lambda} \approx \abs{\pdv*{V}{\sigma}} \approx
+c_\beta\, \beta A \rho / \sigma^2 \to 0$; the coast region contains all states
+with $\sigma^2 \gg \beta A \rho$ up to constants, consistent with
+$\norm{\vec\lambda} < 1$.  The optimal missile thus \emph{waits}: while
+coasting, the spacecraft's maneuvering is exactly offset (in value) by the
+shrinking time-to-go, and $V$ is conserved until the trajectory reaches the
+free boundary $\norm{\vec\lambda} = 1$, where terminal corrections begin.
 
 \section{Defining Equations for the Game Value}
+\label{sec:defining}
 
-$V$ should be fully determined by the following equations:
-\begin{align*}
-  V(\vec{0}, \dot{\vec{r}}) = 0  \text{ for all $\dot{\vec{r}}$}
-\end{align*}
-and
+$V$ should be determined by the following equations (derived in
+\cref{sec:hji}).  Writing $\vec\lambda = \pdv*{V}{\vec v}$, stationarity gives,
+at every point of differentiability with $\rho > 0$,
+\begin{equation}
+  \label{eq:defining}
+  \pdv{V}{\vec r} \cdot \vec v
+  \;+\; \beta A \norm{\vec \lambda}
+  \;-\; A \, \max\big( \norm{\vec\lambda} - 1, \; 0 \big)
+  \;=\; 0 .
+\end{equation}
+Equivalently, in the burn region $\norm{\vec\lambda} \ge 1$,
 \[
-  \frac{\partial V}{\partial \vec{x}} \cdot \dot{\vec{x}} + (1 - \beta) \cdot
-  \left (\norm{\frac{\partial V}{\partial \dot{\vec{x}}}} - 1 \right) = 0
+  \pdv{V}{\vec r} \cdot \vec v + A\Big( 1 - (1 - \beta) \norm{\vec\lambda}
+  \Big) = 0,
 \]
+while in the coast region $\norm{\vec\lambda} \le 1$,
+\[
+  \pdv{V}{\vec r} \cdot \vec v + \beta A \norm{\vec\lambda} = 0 .
+\]
+The interface $\norm{\vec\lambda} = 1$ is a free boundary, not known a priori.
 
+The boundary condition is
+\begin{equation}
+  \label{eq:bc}
+  V \to 0 \quad \text{as } \rho \to 0 \text{ along closing, near-collision
+    approaches (the usable part of the target set)},
+\end{equation}
+and \emph{no} boundary condition is imposed on the rest of the capture set: as
+shown in \cref{sec:regularity}, $V$ is discontinuous across the non-usable
+part, and \cref{eq:defining} should be understood in the viscosity sense, in
+which framework one expects a comparison principle to single out $V$ uniquely
+\cite{crandalllions1983,bardi1997}.  We do not attempt a uniqueness proof
+here.
 
+As sanity checks: \cref{eq:defining} is dimensionally consistent ($V$ has
+units of velocity, so $\pdv*{V}{\vec r}\cdot\vec v$ has units of acceleration
+and $\vec\lambda$ is dimensionless), and along saddle-point play it yields
+$\dv*{V}{t} = -\norm{\vec a_P^*}$ (burn region) and $\dv*{V}{t} = 0$ (coast
+region), as required.
 
 \section{Simplification via Symmetries, Nondimensionalization, and Dominated Actions}
+\label{sec:symmetries}
+
 The way we have defined the problem above is clearly overparameterized.  First
-we observe several symmetries\jnote{actually all just facets of Galilean symmetry}:
+we observe several symmetries, which are the translation, boost, and rotation
+facets of Galilean invariance:
 \begin{itemize}
 \item Symmetry under fixed translation (absolute position doesn't matter; only the relative
-  position $\vec{r} \eqdef \vec{x}_E - \vec{x}_P$);
+  position $\vec{r} = \vec{x}_E - \vec{x}_P$);
 \item Symmetry under constant motion (absolute velocities don't matter; only
-  the relative velocity $\vec{v} \eqdef \dot{\vec{x}}_E - \dot{\vec{x}}_P$);
-\item Isotropy (absolute directions don't matter; only the relative direction
-  $\theta \eqdef \arccos(\frac{\vec{r}}{\| \vec{r} \|} \cdot \frac{\vec{v}}{\|
-    \vec{v}\|})$).
+  the relative velocity $\vec{v} = \dot{\vec{x}}_E - \dot{\vec{x}}_P$);
+\item Isotropy (absolute directions don't matter; only the relative
+  configuration of $\vec r$ and $\vec v$, i.e., the scalars $\rho = \norm{\vec
+    r}$, $v = \norm{\vec v}$ and the angle
+  $\theta = \arccos(\hat{\vec r}\cdot\hat{\vec v})$).
 \end{itemize}
+Thus the six relative coordinates reduce to three scalars, which we may take
+to be
+\begin{align*}
+  \rho &= \norm{\vec r}, \\
+  \sigma &= \vec v \cdot \hat{\vec r} = v \cos\theta
+  && \text{(radial velocity; $\sigma < 0$ means closing)}, \\
+  \tau &= \norm{\vec v - \sigma \hat{\vec r}} = v \sin\theta \ \ge 0
+  && \text{(tangential speed)}.
+\end{align*}
 
-There is one less-obvious symmetry that follows from dimensional analysis (we
-will confirm it explicitly later when we derive the system dynamics).  We are
-interested in the functions $\vec{a}_P$ and $\vec{a}_E$, which output
-accelerations (units $[m \cdot s^{-2}]$) given inputs whose units are either
-distances ($\vec{r}$ has units $[m]$) or velocities ($\vec{v}$ has units
-$[m \cdot s^{-1}]$).  Let's write $\vec{a} = a \hat{\vec{a}}$,
-$\vec{r} = r \hat{\vec{r}}$, and $\vec{v} = v \hat{\vec{v}}$, where $\hat{\vec{a}}$,
-$\hat{\vec{r}}$, and $\hat{\vec{v}}$ are dimensionless unit vectors, and $a$, $r$, and $v$ are scalars that respectively have dimensions of
-acceleration, length, and speed.
+There is one further reduction, from dimensional analysis (we confirm it
+explicitly in \cref{sec:reduction} from the system dynamics).  The data of the
+problem provide only one acceleration scale $A$ (with $\beta$ dimensionless),
+and the state provides a length $\rho$ and speeds $\sigma, \tau$.  Up to
+dimensionless factors there are exactly two independent ways to build an
+acceleration from these, namely $A$ and $v^2/\rho$; equivalently, everything
+dimensionless can depend on the state only through
+\[
+  u \eqdef \frac{\sigma}{\sqrt{A \rho}}, \qquad
+  w \eqdef \frac{\tau}{\sqrt{A \rho}}
+  \qquad \left(\text{or through } \theta \text{ and } \Pi \eqdef
+    \frac{v^2}{A\rho} = u^2 + w^2 \right).
+\]
+This means that the optimal accelerations must take the form
+\[
+  \vec a = A \, m(u, w; \beta)\, \hat{\vec a}, \qquad m \in [0, 1],
+\]
+where the unit vector $\hat{\vec a}$ lies in $\mathrm{span}\{\hat{\vec r},
+\hat{\vec v}\}$ (see below) at an in-plane angle depending only on $(u, w;
+\beta)$.  Likewise, since $V$ has units of velocity, it must scale as
+\begin{equation}
+  \label{eq:V-scaling}
+  V(\rho, \sigma, \tau) = \sqrt{A \rho}\; g(u, w; \beta)
+\end{equation}
+for a dimensionless function $g$ of two dimensionless state variables.
+Equivalently, the dynamics are invariant under the scaling $t \mapsto \kappa
+t$, lengths $\mapsto \kappa^2 \cdot$ lengths (so velocities $\mapsto \kappa
+\cdot$ velocities) with $A$ fixed, under which $V(\kappa^2\rho, \kappa\sigma,
+\kappa\tau) = \kappa V(\rho,\sigma,\tau)$; \cref{eq:V-scaling} is the general
+solution of this homogeneity relation.
 
-Up to dimensionless constant factors, there are two independent ways we can
-construct a scalar with units of acceleration: $A$ and $v^2 / r$.  This means
-that $\vec{a}$.
+\paragraph{In-plane burns are WLOG.}
+We also observe that without loss of generality $P$ and $E$ both perform only
+``in-plane'' burns, i.e., burns satisfying
+$\ddot{\vec{x}}_P \cdot (\vec{r} \times \vec{v}) = 0$ and
+$\ddot{\vec{x}}_E \cdot ( \vec{r} \times \vec{v}) = 0$.  This is now easy to
+see from the reduction: $V$ depends on $\vec v$ only through $\sigma$ and
+$\tau$, and
+\[
+  \pdv{\sigma}{\vec v} = \hat{\vec r}, \qquad
+  \pdv{\tau}{\vec v} = \hat{\vec\tau} \eqdef \frac{\vec v - \sigma \hat{\vec
+      r}}{\tau},
+\]
+so the costate
+$\vec\lambda = V_\sigma \hat{\vec r} + V_\tau \hat{\vec\tau}$ always lies in
+the instantaneous $(\vec r, \vec v)$-plane.  By \cref{sec:equilibrium} both
+players' optimal thrusts are parallel to $\vec\lambda$, hence in-plane.
+Equivalently: an out-of-plane thrust component changes the reduced state
+$(\rho, \sigma, \tau)$ only at second order in $dt$ (it rotates the plane
+without changing the in-plane scalars), while costing delta-V at first order
+-- a dominated action.  (When $\tau = 0$ the plane is degenerate and the claim
+is vacuous; the engagement is collinear.)
 
-Up to a dimensionless constant multiplicative factor, $\hat{\vec{a}}$
-must depend only on $\hat{\vec{r}}$ and $\hat{\vec{v}}$ (specifically $\theta$).
-
-
-We also observe that without loss of generality $P$ and $E$ both perform
-only ``in-plane'' burns, i.e. it should hold that $\ddot{\vec{x}}_P \cdot (\vec{r} \times \vec{v})
-= 0$ and $\ddot{\vec{x}}_E \cdot ( \vec{r} \times \vec{v}) = 0$.  \jnote{todo:
-  elaborate}
-My intuition for this is based on the following idea: the
-  differential game should be the limit as $dt \to 0$ of a discrete game in which the
-  following steps are cycled indefinitely:
-  \begin{enumerate}
-  \item Pursuer sets its own acceleration $\vec{a}_P$ as a function of
-    $\vec{x}_P$, $\vec{v}_P$, $\vec{x}_E$, and $\vec{v}_E$.
-  \item Environment first updates
-    $\vec{v}_P \gets \vec{v}_P + \vec{a}_P \cdot dt$ and ``charges'' the pursuer
-    $\| \vec{a}_P \| \cdot dt$.  Then, if $\vec{x}_E$ lies on the line segment
-    connecting $\vec{x}_P$ and $\vec{x}_P + \vec{v}_P \cdot dt$, the pursuer is
-    said to ``capture'' the evader and the game terminates.  Otherwise, the
-    environment updates $\vec{x}_P \gets \vec{x}_P + \vec{v}_p \cdot dt$.
-  \item Evader sets its own accelerations $\vec{a}_E$ as a function of
-    $\vec{x}_P$, $\vec{v}_P$, $\vec{x}_E$, and $\vec{v}_E$.
-  \item Environment ``forward steps'' the positions and velocities of the evader
-    by updating
-    $\vec{v}_E \gets \vec{v}_E + \vec{a}_E \cdot dt$ and then
-    $\vec{x}_E \gets \vec{x}_E + \vec{v}_E \cdot dt$.
-  \end{enumerate}
-
-  At each state, there is a finite \jnote{and well-defined?} number of steps until capture with
-  optimal play.  The WLOG claim follows by induction on this number.  If the
-  prover can capture within a single step, it can certainly do so with an
-  in-plane burn.  \jnote{todo: continue the argument...or actually maybe there's
-  some way to make it trivial using the fact that the end condition can be
-  defined just in terms of in-plane parameters...and that the set of reachable
-  in-plane parameters by either party is largest with in-plane steps}
+The same conclusion can be reached without gradients by a discrete-time
+exchange argument: the differential game is the $dt \to 0$ limit of a discrete
+game in which the following steps are cycled indefinitely:
+\begin{enumerate}
+\item Pursuer sets its own acceleration $\vec{a}_P$ as a function of
+  $\vec{x}_P$, $\vec{v}_P$, $\vec{x}_E$, and $\vec{v}_E$.
+\item Environment first updates
+  $\vec{v}_P \gets \vec{v}_P + \vec{a}_P \cdot dt$ and ``charges'' the pursuer
+  $\| \vec{a}_P \| \cdot dt$.  Then, if $\vec{x}_E$ lies on the line segment
+  connecting $\vec{x}_P$ and $\vec{x}_P + \vec{v}_P \cdot dt$, the pursuer is
+  said to ``capture'' the evader and the game terminates.  Otherwise, the
+  environment updates $\vec{x}_P \gets \vec{x}_P + \vec{v}_P \cdot dt$.
+\item Evader sets its own acceleration $\vec{a}_E$ as a function of
+  $\vec{x}_P$, $\vec{v}_P$, $\vec{x}_E$, and $\vec{v}_E$.
+\item Environment ``forward steps'' the positions and velocities of the evader
+  by updating
+  $\vec{v}_E \gets \vec{v}_E + \vec{a}_E \cdot dt$ and then
+  $\vec{x}_E \gets \vec{x}_E + \vec{v}_E \cdot dt$.
+\end{enumerate}
+The capture condition and the reachable sets of the in-plane parameters
+$(\rho, \sigma, \tau)$ are both expressible purely in terms of in-plane
+quantities, and replacing any step's action by its in-plane projection (with
+the same magnitude budget) never shrinks the actor's reachable set of in-plane
+parameters; the claim follows by backward induction over the (finite, under
+optimal play) number of steps to capture.  This discrete game reappears as a
+numerical scheme in \cref{sec:numerics}.
 
 \section{Formulation as a differential game}
+\label{sec:hji}
 
 We formulate the problem as a differential game and employ the
-Hamilton--Jacobi--Isaacs (HJI) equation to obtain a differential equation constraining
-the value function.
+Hamilton--Jacobi--Isaacs (HJI) equation \cite{isaacs1965,evanssouganidis1984}
+to obtain a differential equation constraining the value function.
 
 \subsection{The HJI equation}
 
@@ -287,32 +634,49 @@ The HJI equation may be written as follows:
 \begin{align}
 \pdv{V(\vec{s}, t)}{t} + \min_{\phi} \max_{\psi} \left[
   \nabla V(\vec{s}, t) \cdot F(\vec{s}, \phi, \psi) + G(\vec{s}, \phi, \psi)
-\right]
+\right] = 0,
 \end{align}
-subject to the boundary condition $V(\vec{s}, t) = H(\vec{s}, t)$ within the
-capture set.
-TODO more considerations for capture formalism may exist in general?
+subject to the boundary condition $V(\vec{s}, t) = H(\vec{s}, t)$ on the
+target set.  Two standard caveats about the capture formalism: the boundary
+condition may only be imposed on the \emph{usable part} of the target set
+(those boundary states from which the pursuer can actually force penetration;
+cf.\ \cref{sec:regularity}), and $V$ may be nonsmooth, in which case the HJI
+equation holds in the viscosity sense
+\cite{crandalllions1983,evanssouganidis1984}.  Since our Hamiltonian is
+additively separable in $(\phi, \psi)$, the $\min\max$ and $\max\min$
+Hamiltonians coincide (Isaacs' condition) and the game has a value.
 
 \subsection{Specializing to the 1M1S game}
+\label{sec:reduction}
 
 We specialize the HJI equation for the case of the missile pursuit game.
 Here, $V$, $F$, and $G$ lack time dependence, and $H$ is zero.
 
-As previously established, the state space $\vec{s}$ is three-dimensional:
+As established in \cref{sec:symmetries}, the state space is three-dimensional:
 \begin{align}
-\vec{s} = (\rho, \sigma, \tau)
+\vec{s} = (\rho, \sigma, \tau),
 \end{align}
 where $\rho$ is the distance, $\sigma$ is the radial velocity, and $\tau$ is the
-tangential velocity.
-
-The system dynamics are: \jnote{I think this accounts for centrifugal and }
+tangential speed, and (WLOG) both controls are in-plane:
+$\vec a_m = (a_{m\sigma}, a_{m\tau})$ with $\norm{\vec a_m} \le A$ for the
+missile and $\vec a_s = (a_{s\sigma}, a_{s\tau})$ with
+$\norm{\vec a_s} \le \beta A$ for the spacecraft.  Since $\vec r = \vec x_E -
+\vec x_P$, the relative acceleration is $\vec a_s - \vec a_m$, and the system
+dynamics are
 \begin{align}
 \dot{\vec{s}}
 &= F(\rho, \sigma, \tau, \vec{a}_m, \vec{a}_s) \notag \\
-&= \left(\sigma,
-  \frac{\tau^2}{\rho} + a_{m\sigma} - a_{s\sigma},
-  -\frac{\sigma\tau}{\rho} + a_{m\tau} - a_{s\tau}\right)
+&= \left(\sigma,\;
+  \frac{\tau^2}{\rho} + a_{s\sigma} - a_{m\sigma},\;
+  -\frac{\sigma\tau}{\rho} + a_{s\tau} - a_{m\tau}\right).
 \end{align}
+The terms $\tau^2/\rho$ and $-\sigma\tau/\rho$ are the centrifugal and
+Coriolis effects of the rotating line-of-sight frame; equivalently, the
+relative angular momentum $h = \rho\tau$ obeys
+$\dot h = \rho\,(a_{s\tau} - a_{m\tau})$, so with no thrust $h$ is conserved.
+(Note that flipping the sign convention to $\vec a_m - \vec a_s$ leaves the
+scalar PDE below unchanged, by the symmetry of the norm balls; it only flips
+the optimal control directions.)
 
 We will also write $\vec{a}_m = \phi$ for the missile's control and $\vec{a}_s =
 \psi$ for the spacecraft's control.
@@ -321,45 +685,101 @@ Substituting all of this, the HJI equation for this game is:
 \begin{align}
 \min_{\vec{a}_m} \max_{\vec{a}_s} \left[
   \pdv{V}{\rho} \sigma
-+ \pdv{V}{\sigma} \left(\frac{\tau^2}{\rho} + a_{m\sigma} - a_{s\sigma}\right)
-+ \pdv{V}{\tau} \left(-\frac{\sigma\tau}{\rho} + a_{m\tau} - a_{s\tau}\right)
-+ ||\vec{a}_m||
-\right] = 0
++ \pdv{V}{\sigma} \left(\frac{\tau^2}{\rho} + a_{s\sigma} - a_{m\sigma}\right)
++ \pdv{V}{\tau} \left(-\frac{\sigma\tau}{\rho} + a_{s\tau} - a_{m\tau}\right)
++ \norm{\vec{a}_m}
+\right] = 0 .
 \end{align}
+The inner optimizations can be carried out in closed form.  Writing
+$q \eqdef \sqrt{V_\sigma^2 + V_\tau^2} = \norm{\vec \lambda}$, the maximum
+over $\vec a_s$ contributes $+\beta A q$, and the minimum over $\vec a_m$
+contributes $-A \max(q - 1, 0)$, yielding the scalar PDE
+\begin{equation}
+  \label{eq:hji-reduced}
+  \sigma \pdv{V}{\rho}
+  + \frac{\tau^2}{\rho} \pdv{V}{\sigma}
+  - \frac{\sigma\tau}{\rho} \pdv{V}{\tau}
+  + \beta A q - A \max(q - 1,\, 0) = 0 ,
+\end{equation}
+which is exactly \cref{eq:defining} expressed in the reduced coordinates.
 
-I am not really sure how to solve something that looks like that.
-The reason the existence of $\pdv{V}{x}$ terms is problematic for a numerical
-solution is because $\dot{x}$ can be very high: the missile acceleration may be
-effectively infinite.
-Then the Taylor series approximation used in the HJB equation derivation breaks
-down.
-That is, in our case, $V(x(t + dt))$ is not well-approximated as $V(x) +
-\pdv{V}{x} \dot{x} dt$.
-Fortunately, we can actually work with $V(x(t + dt))$ directly, using Bellman's
-original \textit{discrete} principle of optimality.
+\subsection{Reduction to two dimensionless variables}
 
-The idea is that for a given state $\vec{s}$, the value after a single timestep
-had better be the minmax value over states accessible after a single timestep.
+Substituting the scaling form \cref{eq:V-scaling},
+$V = \sqrt{A\rho}\, g(u, w)$ with $u = \sigma/\sqrt{A\rho}$,
+$w = \tau/\sqrt{A\rho}$, we have
+\[
+  \pdv{V}{\sigma} = g_u, \qquad
+  \pdv{V}{\tau} = g_w, \qquad
+  \pdv{V}{\rho} = \frac{A}{2\sqrt{A\rho}} \big( g - u g_u - w g_w \big),
+\]
+and \cref{eq:hji-reduced} becomes (the dimensional factor $A$ cancels
+throughout):
+\begin{equation}
+  \label{eq:g-pde}
+  \boxed{\ \frac{u}{2}\big( g - u g_u - w g_w \big)
+  + w^2 g_u - u w g_w
+  + \beta q - \max( q - 1, \, 0 ) = 0, \qquad q = \sqrt{g_u^2 + g_w^2}. \ }
+\end{equation}
+This is a first-order PDE in two variables on the half-plane $w \ge 0$ (with
+$g$ even in $w$, so $g_w = 0$ on the axis $w = 0$), with $\beta$ as the only
+parameter.  The boundary conditions live at infinity in these coordinates:
+\begin{itemize}
+\item Fast closing ($u \to -\infty$, $w$ bounded): the analysis of
+  \cref{sec:coast} gives $g(u, w) \to 0$, at rate $g = \Theta_\beta(\beta /
+  \abs{u})$; the coast region $q < 1$ contains a neighborhood of this limit.
+\item Fast receding ($u \to +\infty$): the missile must first cancel the
+  recession against opposition, so $g$ grows linearly, $g = \Theta_\beta(u)$.
+\item From rest ($u = w = 0$): the acceleration-matching policy of
+  \cref{sec:matching} gives the upper bound $g(0,0) \le 2\sqrt{\beta}$ (in the
+  impulsive-boost idealization; finite missile thrust adds $O(\beta)$
+  corrections).
+\end{itemize}
+
+\subsection{Numerical solution}
+\label{sec:numerics}
+
+Two features of \cref{eq:g-pde} bear on numerics.  First, within the model the
+accelerations are bounded by $A$, so the characteristics have finite speed and
+the standard first-order Taylor expansion underlying the HJB/HJI derivation is
+valid; the worry that ``the missile acceleration may be effectively
+infinite'' applies only to the \emph{impulsive-boost idealization} ($A \to
+\infty$ during a boost), whose proper formalization is an impulse-control
+quasi-variational inequality rather than \cref{eq:hji-reduced}.  Second, $V$
+is nonsmooth (free boundary; singular surfaces), so a convergent scheme should
+be a monotone/upwind scheme for viscosity solutions.
+
+A natural such scheme is the semi-Lagrangian discretization, which is
+precisely Bellman's \emph{discrete} principle of optimality applied to the
+discrete game of \cref{sec:symmetries}: for a given state $\vec s$, the value
+must be the minmax value over states accessible after a single timestep,
 \begin{align}
 V(\vec{s}) = \min_{\vec{a}_m} \max_{\vec{a}_s} \left[
-  V(\vec{s}_\text{next}(\vec{a}_m, \vec{a}_t, dt)) +
-  ||\vec{a}_m||
-\right]
+  V\big(\vec{s}_\text{next}(\vec{a}_m, \vec{a}_s, dt)\big) +
+  \norm{\vec{a}_m} \, dt
+\right],
 \end{align}
-
-Here, $\vec{s}_\text{next}$ is basically just $\vec{s} + F(\dots) dt$.
+where $\vec{s}_\text{next} = \vec{s} + F(\vec s, \vec a_m, \vec a_s)\, dt$ (or
+a higher-order step), iterated to a fixed point on a truncated $(u, w)$ grid
+with the asymptotics above as far-field conditions.  We leave the numerical
+solution of \cref{eq:g-pde}, and in particular the computed shape of the free
+boundary $q = 1$, to future work.
 
 \section{Analysis of acceleration matching}
+\label{sec:matching}
 
 Acceleration matching is an intuitive strategy that has been proposed and
-analyzed previously. Here we recapitulate the analysis. We repeat the derivation
-of the optimal allocation of $\Delta$v between the boost and terminal stages,
-and the maximum effective range of this missile assuming a $\Delta$v limit.
+analyzed previously (it is closely related to the classical
+pursuit-guidance literature; see, e.g., \cite{zarchan2012,ho1965}). Here we
+recapitulate the analysis. We repeat the derivation of the optimal allocation
+of $\Delta$v between the boost and terminal stages, and the maximum effective
+range of this missile assuming a $\Delta$v limit.
 
 In the acceleration matching strategy, missile behavior has two stages:
 \begin{enumerate}
 \item Boost phase, in which the missile instantaneously gains some velocity
-$v_\text{boost}$ toward the target.
+$v_\text{boost}$ toward the target.  (This is the impulsive idealization of a
+short full-throttle burn; it is here that finite $A$ is idealized away.)
 \item Terminal phase, in which the missile accelerates to match target
 accelerations. In this stage the missile has some $\Delta$v budget
 $v_\text{term}$.
@@ -367,7 +787,8 @@ $v_\text{term}$.
 
 Consider the situation where the missile and target begin at time $t = 0$ at a
 distance $D$ apart and 0 relative velocity. Assume the target has an
-acceleration capacity $a$.
+acceleration capacity $a$ (in the notation of the preceding sections, $a =
+\beta A$, and matching is feasible since $a \le A$).
 
 In acceleration matching, during the terminal phase, the missile maintains a
 constant closure velocity $v_\text{boost}$, since it thrusts to cancel the
@@ -402,18 +823,127 @@ v_\text{boost}^* &= \frac{v}{2}
 Substituting, we obtain the maximum hit distance $D^*$ for a given total
 $\Delta$v budget $v$:
 \begin{equation}
+  \label{eq:matching-envelope}
 D^* = \frac{v^2}{4a}
 \end{equation}
+Equivalently, capture from rest at distance $D$ costs this policy at most $v =
+2\sqrt{aD} = 2\sqrt{\beta A D}$, which is the source of the bound $g(0,0) \le
+2\sqrt\beta$ quoted in \cref{sec:reduction}.
 
-\section{Lateral acceleration matching is suboptimal}
+\section{Pure acceleration matching is suboptimal in the terminal phase}
+\label{sec:lateral-suboptimal}
 
-We give a simple argument that accelerating longitudinally in the terminal phase
-leads to a longer effective range.
+We now give a simple argument that the \emph{policy} ``always match target
+acceleration during the terminal phase'' is dominated: whenever the closure
+speed is low relative to the range, converting delta-V into additional
+\emph{longitudinal} (along the line of sight) velocity yields a longer
+effective range than reserving it for matching.  Interestingly, the envelope
+\cref{eq:matching-envelope} survives unchanged from rest -- the classical
+optimal split is exactly the point where the two policies coincide -- but from
+every other state the refined policy is strictly better.
 
-\balance
+\paragraph{Exchange rate between longitudinal and matching delta-V.}
+Consider a terminal-phase state with range $\rho$, closure speed $\sigma > 0$
+(we take $\sigma$ positive-closing in this section for readability), remaining
+budget $w$, and target acceleration capacity $a$.  The matching policy's
+cost-to-go is
+\[
+  J_\text{match}(\rho, \sigma) = a \, t_{go} = \frac{a \rho}{\sigma} .
+\]
+A marginal unit of delta-V spent longitudinally instead increases $\sigma$ and
+saves
+\[
+  -\pdv{J_\text{match}}{\sigma} = \frac{a\rho}{\sigma^2}
+\]
+units of future matching cost.  The exchange is favorable exactly when
+\[
+  \frac{a\rho}{\sigma^2} > 1
+  \quad\Longleftrightarrow\quad
+  \sigma < \sqrt{a\rho} .
+\]
+In dimensionless terms the switching locus is $\sigma^2 / (a \rho) = 1$ -- the
+same dimensionless group $\Pi$ singled out in \cref{sec:symmetries}, and a
+heuristic shadow of the free boundary $q = 1$ of \cref{eq:g-pde}.
 
-\newpage
+\paragraph{The refined policy and its envelope.}
+This suggests the policy: \emph{if $\sigma < \sqrt{a\rho}$, boost
+  (longitudinally) up to closure $\sqrt{a\rho}$, then match}.  Its cost-to-go
+is
+\[
+  J_\text{refined}(\rho, \sigma) =
+  \begin{cases}
+    2\sqrt{a\rho} - \sigma, & \sigma \le \sqrt{a\rho}, \\[2pt]
+    \dfrac{a\rho}{\sigma}, & \sigma \ge \sqrt{a\rho},
+  \end{cases}
+\]
+(boost cost $\sqrt{a\rho} - \sigma$ plus matching cost
+$a\rho/\sqrt{a\rho} = \sqrt{a\rho}$; once $\sigma \ge \sqrt{a\rho}$ the state
+stays on the matching side, since $\sigma$ is held constant while $\rho$
+shrinks).  By the AM--GM inequality,
+\[
+  \frac{a\rho}{\sigma} + \sigma \ \ge\ 2\sqrt{a\rho}
+  \qquad\Longleftrightarrow\qquad
+  J_\text{refined} \le J_\text{match},
+\]
+with equality iff $\sigma = \sqrt{a\rho}$: pure matching is strictly dominated
+everywhere below the switching locus.  In terms of effective range from a
+state $(\sigma, w)$: pure matching reaches targets out to
+\[
+  D_\text{match} = \frac{w \sigma}{a},
+  \qquad\text{while}\qquad
+  D_\text{refined} = \frac{(w + \sigma)^2}{4a},
+\]
+and $(w+\sigma)^2 \ge 4 w \sigma$ gives $D_\text{refined} \ge D_\text{match}$,
+with equality iff $w = \sigma$ -- i.e., iff the remaining budget exactly
+equals the current closure speed.
 
+\paragraph{Why the classical envelope is nevertheless unchanged from rest.}
+Launching from rest with total budget $v$ and boosting by $\sigma$ leaves
+$w = v - \sigma$, so $D_\text{refined} = (w + \sigma)^2/4a = v^2/4a$
+\emph{independently of the split}, matching \cref{eq:matching-envelope}.  The
+classical optimal split $v_\text{boost}^* = v/2$ is precisely the choice that
+makes $w = \sigma$: it places the missile exactly on the switching locus
+$\sigma = \sqrt{a D^*}$ (indeed $\sqrt{a \cdot v^2/4a} = v/2$), after which
+matching keeps it on the matched side for the rest of the flight.  So the
+classical analysis obtains the right envelope from rest, but for a
+non-obvious reason; and the always-match policy is fragile.  From any
+off-nominal state -- a mis-sized boost, an engagement inherited with existing
+closure, or mid-course radial evasion that has eroded $\sigma$ -- re-boosting
+per the rule $\sigma < \sqrt{a\rho}$ strictly extends the capture envelope,
+by the factor $(w+\sigma)^2 / 4w\sigma$.
+
+\paragraph{What this does and does not show.}
+The refined policy improves only the longitudinal channel; it retains
+instant lateral matching.  A lever-arm argument suggests lateral matching is
+in fact locally optimal within the linearized lateral subgame: the target
+purchases predicted miss (zero-effort miss \cite{zarchan2012}) at rate
+proportional to the current time-to-go, and the missile's price to remove it
+only grows as time-to-go shrinks, so postponing corrections is dominated,
+while pre-empting them is punished by a target reversal.  We do not make this
+rigorous here; the exact optimal blend of longitudinal and lateral effort --
+and the true constant $g(0,0) \le 2\sqrt\beta$, i.e., whether the matching
+envelope constant $1/4$ in \cref{eq:matching-envelope} is game-optimal -- is
+determined by the solution of \cref{eq:g-pde}, which we leave to future
+(numerical) work.
+
+\section{Open questions}
+
+\begin{enumerate}
+\item Solve \cref{eq:g-pde} numerically; determine the free boundary $q = 1$
+  and the from-rest constant $g(0,0;\beta)$, and compare against
+  $2\sqrt\beta$.
+\item Prove a comparison/uniqueness theorem adapted to the discontinuous
+  boundary data on the non-usable part of the target set (or regularize with a
+  capture radius $\ell$ and control the limit $\ell \to 0$).
+\item Sharpen \cref{thm:finite-dv}'s dependence on $(1-\beta)$ and determine
+  the asymptotics of $V$ as $\beta \to 1$.
+\item Characterize the singular surfaces of $V$ (where the saddle point of
+  \cref{sec:equilibrium} is non-unique) and the structure of optimal
+  trajectories crossing them.
+\end{enumerate}
+
+
+\bibliographystyle{plain}
 \bibliography{paper}
 
 \end{document}
