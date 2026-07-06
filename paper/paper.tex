@@ -13,6 +13,7 @@
 \usepackage{caption}
 \usepackage{subcaption}
 \usepackage{physics}
+\usepackage[hidelinks]{hyperref}
 \usepackage{cleveref}
 
 \DeclareMathOperator*{\argmax}{arg\,max}
@@ -166,6 +167,88 @@ Capture is the event $\vec{r}(T) = \vec{0}$.  \Cref{sec:symmetries} justifies
 that $V$ depends only on $(\vec r, \vec v)$, indeed only on three scalars
 derived from them.
 
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Differential games.}
+Pursuit--evasion differential games originate with Isaacs \cite{isaacs1965},
+who introduced the HJI equation and the notion of the usable part of the
+target set, and solved a catalogue of pursuit problems including the
+\emph{isotropic rocket}: an acceleration-steered pursuer against a
+simple-motion (velocity-controlled) evader, with time-to-capture as the
+payoff and a positive capture radius.  Our game differs in all three
+respects: both players are acceleration-controlled double integrators,
+capture is exact point coincidence, and the payoff is the pursuer's fuel.
+Rigorous notions of value for such games were later developed via
+nonanticipative strategies and viscosity solutions
+\cite{crandalllions1983,evanssouganidis1984,bardi1997}, and independently in
+the positional (feedback) framework of Krasovskii and Subbotin
+\cite{krasovskii1988}.  Since our dynamics are linear, the pure capture
+question (the ``game of kind'') also falls within the scope of Pontryagin's
+theory of linear differential games \cite{pontryagin1967}.  Pursuit games in
+which the controls are subject to integral (energy-type) constraints are
+likewise classical (see \cite{krasovskii1988} and references); there, fuel
+enters as a hard constraint on the admissible controls, whereas here it is
+the payoff itself.
+
+\paragraph{Missile guidance.}
+In the guidance literature, pursuit--evasion first appears in
+linear-quadratic form \cite{ho1965}, where quadratic penalties on both
+players' accelerations yield proportional-navigation-type feedback laws.
+Hard acceleration bounds were introduced by Gutman and Leitmann
+\cite{gutmanleitmann1976} and developed extensively by Shinar
+\cite{shinar1981}: those games linearize the kinematics about an initial
+collision course, take terminal miss distance (or capture-or-not) as the
+payoff over a short terminal phase, and yield bang-bang saddle-point
+strategies.  Zero-effort-miss guidance and its variants are treated at
+length in \cite{zarchan2012}.  In all of these, fuel is at most an implicit
+consideration (or a quadratic proxy); our game instead makes delta-V the
+explicit objective over the entire engagement, which is what produces the
+burn/coast structure absent from time- and miss-distance games.
+
+\paragraph{Fuel-optimal spaceflight.}
+Minimum-fuel trajectory optimization against a \emph{non-maneuvering} target
+is a pillar of astrodynamics: Lawden's primer vector theory \cite{lawden1963}
+characterizes fuel-optimal trajectories by an adjoint (``primer'') vector,
+with maximum-thrust arcs where its norm exceeds $1$ and coast arcs where it
+is below $1$.  The costate $\vec\lambda = \pdv*{V}{\vec v}$ of
+\cref{sec:equilibrium} is precisely the game-theoretic analogue of the
+primer vector, and the free boundary $\norm{\vec\lambda} = 1$ of
+\cref{sec:defining} is Lawden's switching condition generalized to an
+optimally maneuvering target.  Orbital pursuit--evasion games including
+gravity have been solved numerically \cite{pontani2009}, but again with
+time-type payoffs; our free-space model deliberately strips out gravity to
+isolate the fuel-versus-maneuver tradeoff.  Numerical solution of HJI
+equations of the kind derived in \cref{sec:hji} is well developed via
+level-set and semi-Lagrangian methods \cite{mitchell2005,bardi1997}.
+
+\paragraph{Positioning and novelty.}
+The acceleration-matching policy of \cref{sec:matching} is, as far as we
+know, folklore: it circulates in informal analyses of ``realistic'' space
+combat\footnote{E.g., in discussions surrounding the simulation game
+  \emph{Children of a Dead Earth} and the \emph{Atomic Rockets} reference
+  site.} rather than in the academic literature, and we are not aware of a
+published analysis of its optimality.  More broadly, we have not found a
+prior treatment of the specific game studied here: both players ideal double
+integrators in free space, hard acceleration bounds with advantage ratio
+$\beta < 1$, exact point capture, and the pursuer's delta-V
+\cref{eq:missile-delta-v} as the (lexicographically primary) payoff.  The
+closest threads each miss one ingredient: the bounded-control terminal-phase
+games have the hard bounds but a miss-distance payoff and linearized
+kinematics; primer vector theory has the fuel payoff but no adversary;
+integral-constraint pursuit treats fuel as a constraint rather than a
+payoff.  Accordingly, we believe the following are new, while emphasizing
+that each is assembled from standard parts: the finite-delta-V feedback
+strategy and the $\sqrt{A\rho}$ capture-cost scaling of \cref{thm:finite-dv};
+the identification of the burn/coast free boundary as an adversarial primer
+vector condition (\cref{sec:equilibrium,sec:coast}); the reduction of the
+game to the two-variable PDE \cref{eq:g-pde}; and the domination analysis of
+acceleration matching in \cref{sec:lateral-suboptimal}, including the
+observation that the classical range envelope is nevertheless exact on the
+nominal boost--terminal split.  We make no strong priority claims: the
+pursuit-games literature is vast and scattered, and we would welcome
+pointers to prior appearances of any of these observations.
+
 \section{Existence of a Finite $\Delta v$ Strategy}
 \label{sec:finite-dv}
 
@@ -181,7 +264,7 @@ with authority $(1-\beta)A$, and excess acceleration can then be used to
 produce closure.
 
 \begin{lemma}[directional dominance]
-  \label{lem:dominance}
+  \crefalias{theorem}{lemma}\label{lem:dominance}
   Fix a unit vector $\hat{\vec u}$ and suppose the missile plays
   $\vec a_P = A \hat{\vec u}$.  Then for every admissible spacecraft control,
   \[
@@ -313,7 +396,11 @@ optimizers form a saddle point.  They are:
 The interpretation is a marginal cost--benefit comparison: a unit of missile
 delta-V buys a unit change of relative velocity against the costate, worth
 $\norm{\vec\lambda}$ units of $V$; the missile burns exactly when the marginal
-value exceeds the marginal cost $1$.
+value exceeds the marginal cost $1$.  Readers familiar with astrodynamics
+will recognize $\vec\lambda$ as the primer vector \cite{lawden1963} of the
+engagement, and the rule above as Lawden's burn/coast switching condition,
+here arising in a game rather than in open-loop optimal control
+(cf.\ \cref{sec:related}).
 
 Two remarks on the structure.  First, note that \emph{both} players thrust in
 the same direction $\hat{\vec\lambda}$: because the missile's thrust enters
@@ -341,7 +428,7 @@ differentiable.  That is false as stated: $V$ fails to be even
 sense of Isaacs \cite{isaacs1965}.  We record the correct statements.
 
 \begin{proposition}[discontinuity on the non-usable boundary]
-  \label{prop:discont}
+  \crefalias{theorem}{proposition}\label{prop:discont}
   Fix $\vec v$ with $s \eqdef \vec v \cdot \hat{\vec r} > 0$ (receding).  Then
   for all $\rho > 0$,
   \[
@@ -410,7 +497,7 @@ objective this is false: the state space contains a nonempty \emph{coast
 \cref{sec:equilibrium} -- in which the optimal missile thrust is zero.
 
 \begin{proposition}
-  \label{prop:coast}
+  \crefalias{theorem}{proposition}\label{prop:coast}
   Consider collision-course states: $\vec v = -\sigma_0 \hat{\vec r}$ with
   closing speed $\sigma_0 > 0$, separation $\rho$, and time-to-go
   $t_{go} = \rho / \sigma_0$.  In the regime
@@ -769,8 +856,9 @@ boundary $q = 1$, to future work.
 \label{sec:matching}
 
 Acceleration matching is an intuitive strategy that has been proposed and
-analyzed previously (it is closely related to the classical
-pursuit-guidance literature; see, e.g., \cite{zarchan2012,ho1965}). Here we
+analyzed previously, though to our knowledge only informally
+(\cref{sec:related}); it is closely related to the classical
+pursuit-guidance literature (see, e.g., \cite{zarchan2012,ho1965}). Here we
 recapitulate the analysis. We repeat the derivation of the optimal allocation
 of $\Delta$v between the boost and terminal stages, and the maximum effective
 range of this missile assuming a $\Delta$v limit.
