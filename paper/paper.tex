@@ -91,7 +91,8 @@
   is zero), and use the symmetries of the problem to reduce the value to a
   function of two dimensionless variables.  We also revisit the classical
   ``acceleration matching'' guidance policy: we verify its range envelope
-  $D^* = v^2/4a$, exhibit a longitudinal-burn refinement that dominates it
+  $D^* = v^2/4a$,   \jnote{$D^*$, $v$, and $a$
+    weren't defined} exhibit a longitudinal-burn refinement that dominates it
   from every off-nominal state, and explain why the two coincide exactly on
   the nominal boost--terminal split.
 \end{abstract}
@@ -114,7 +115,10 @@ and
     \|
   \ddot{\vec{x}}_E(t) \| \le \beta A,
 \end{equation}
-where $0 \le \beta < 1$ is a fixed parameter.  To be more precise, the missile
+where $0 \le \beta < 1$ is a fixed parameter.  \jnote{this seems to implicitly
+  assume that the evader would have a larger delta-v budget to balance that it
+  is more acceleration-constrained.  is this realistic in any space scenario,
+  futuristic or otherwise?}  To be more precise, the missile
 and spacecraft strategies are functions $\vec{a}_P, \vec{a}_E$ that take as
 input $\vec{x}_P(t)$, $\vec{x}_E(t)$, $\dot{\vec{x}}_P(t)$,
 $\dot{\vec{x}}_E(t)$, and output a vector in $\R^3$ bounded in norm by $A$ or
@@ -126,7 +130,11 @@ then defined as the solution to the ODEs
   \ddot{\vec{x}}_E(t) &= \vec{a}_E\big (\vec{x}_P(t), \vec{x}_E(t),
                         \dot{\vec{x}}_P(t), \dot{\vec{x}}_E(t) \big ).
 \end{align}
-(For discontinuous feedback laws the closed-loop ODE need not admit classical
+(\jnote{I don't really know what the following means; probably deserves
+  more discussion as a proper subsection that delves into nuances about the
+  problem modeling.  For example, what are settings in which discontinuous
+  feedback laws would make sense?  does it make sense here?  Does making the
+  capture radius positive change anything?} For discontinuous feedback laws the closed-loop ODE need not admit classical
 solutions; a fully rigorous treatment would use Filippov solutions and/or
 nonanticipative strategies in the sense of Elliott--Kalton
 \cite{evanssouganidis1984,bardi1997}.  We work at the level of feedback laws
@@ -162,6 +170,8 @@ Throughout we work in relative coordinates
   \vec{v} \eqdef \dot{\vec{x}}_E - \dot{\vec{x}}_P, \qquad
   \ddot{\vec{r}} = \vec{a}_E - \vec{a}_P,
 \end{equation}
+\jnote{should either use $\vec{v}$ and $\vec{a}$ or $\dot{\vec{r}}$ and
+  $\ddot{\vec{r}}$ (I prefer the former).}
 and write $\rho \eqdef \norm{\vec{r}}$, $\hat{\vec{r}} \eqdef \vec{r}/\rho$.
 Capture is the event $\vec{r}(T) = \vec{0}$.  \Cref{sec:symmetries} justifies
 that $V$ depends only on $(\vec r, \vec v)$, indeed only on three scalars
@@ -176,11 +186,13 @@ who introduced the HJI equation and the notion of the usable part of the
 target set, and solved a catalogue of pursuit problems including the
 \emph{isotropic rocket}: an acceleration-steered pursuer against a
 simple-motion (velocity-controlled) evader, with time-to-capture as the
-payoff and a positive capture radius.  Our game differs in all three
+payoff and a positive capture radius.  \jnote{this is supposed to model a
+  missile chasing an aircraft, right?  would be good to motivate why our variant
+of the pursuit game might be motivated in real life} Our game differs in all three
 respects: both players are acceleration-controlled double integrators,
 capture is exact point coincidence, and the payoff is the pursuer's fuel.
 Rigorous notions of value for such games were later developed via
-nonanticipative strategies and viscosity solutions
+nonanticipative strategies  and viscosity solutions \jnote{what are these?}
 \cite{crandalllions1983,evanssouganidis1984,bardi1997}, and independently in
 the positional (feedback) framework of Krasovskii and Subbotin
 \cite{krasovskii1988}.  Since our dynamics are linear, the pure capture
@@ -189,11 +201,11 @@ theory of linear differential games \cite{pontryagin1967}.  Pursuit games in
 which the controls are subject to integral (energy-type) constraints are
 likewise classical (see \cite{krasovskii1988} and references); there, fuel
 enters as a hard constraint on the admissible controls, whereas here it is
-the payoff itself.
+the payoff itself.  \jnote{is this not equivalent?}
 
 \paragraph{Missile guidance.}
 In the guidance literature, pursuit--evasion first appears in
-linear-quadratic form \cite{ho1965}, where quadratic penalties on both
+linear-quadratic form \cite{ho1965}, where quadratic penalties \jnote{why?} on both
 players' accelerations yield proportional-navigation-type feedback laws.
 Hard acceleration bounds were introduced by Gutman and Leitmann
 \cite{gutmanleitmann1976} and developed extensively by Shinar
@@ -215,7 +227,9 @@ is below $1$.  The costate $\vec\lambda = \pdv*{V}{\vec v}$ of
 \cref{sec:equilibrium} is precisely the game-theoretic analogue of the
 primer vector, and the free boundary $\norm{\vec\lambda} = 1$ of
 \cref{sec:defining} is Lawden's switching condition generalized to an
-optimally maneuvering target.  Orbital pursuit--evasion games including
+optimally maneuvering target.  \jnote{I would welcome a full section giving a
+  primer (no pun intended) on the primer vector theory and its relation to
+  pursuit-evasion} Orbital pursuit--evasion games including
 gravity have been solved numerically \cite{pontani2009}, but again with
 time-type payoffs; our free-space model deliberately strips out gravity to
 isolate the fuel-versus-maneuver tradeoff.  Numerical solution of HJI
@@ -223,31 +237,31 @@ equations of the kind derived in \cref{sec:hji} is well developed via
 level-set and semi-Lagrangian methods \cite{mitchell2005,bardi1997}.
 
 \paragraph{Positioning and novelty.}
-The acceleration-matching policy of \cref{sec:matching} is, as far as we
-know, folklore: it circulates in informal analyses of ``realistic'' space
+The acceleration-matching policy of \cref{sec:matching} is, as far as we know,
+folklore: it circulates in informal analyses of ``realistic'' space
 combat\footnote{E.g., in discussions surrounding the simulation game
-  \emph{Children of a Dead Earth} and the \emph{Atomic Rockets} reference
-  site.} rather than in the academic literature, and we are not aware of a
-published analysis of its optimality.  More broadly, we have not found a
-prior treatment of the specific game studied here: both players ideal double
-integrators in free space, hard acceleration bounds with advantage ratio
-$\beta < 1$, exact point capture, and the pursuer's delta-V
-\cref{eq:missile-delta-v} as the (lexicographically primary) payoff.  The
-closest threads each miss one ingredient: the bounded-control terminal-phase
-games have the hard bounds but a miss-distance payoff and linearized
-kinematics; primer vector theory has the fuel payoff but no adversary;
-integral-constraint pursuit treats fuel as a constraint rather than a
-payoff.  Accordingly, we believe the following are new, while emphasizing
-that each is assembled from standard parts: the finite-delta-V feedback
-strategy and the $\sqrt{A\rho}$ capture-cost scaling of \cref{thm:finite-dv};
-the identification of the burn/coast free boundary as an adversarial primer
-vector condition (\cref{sec:equilibrium,sec:coast}); the reduction of the
-game to the two-variable PDE \cref{eq:g-pde}; and the domination analysis of
-acceleration matching in \cref{sec:lateral-suboptimal}, including the
-observation that the classical range envelope is nevertheless exact on the
-nominal boost--terminal split.  We make no strong priority claims: the
-pursuit-games literature is vast and scattered, and we would welcome
-pointers to prior appearances of any of these observations.
+  \emph{Children of a Dead Earth} and the \emph{Atomic Rockets} reference site.}
+rather than in the academic literature, and we are not aware of a published
+analysis of its optimality.  More broadly, we have not found a prior treatment
+of the specific game studied here: both players ideal double integrators in free
+space, hard acceleration bounds with advantage ratio $\beta < 1$, exact point
+capture, and the pursuer's delta-V \cref{eq:missile-delta-v} as the
+(lexicographically primary) payoff.  The closest threads each miss one
+ingredient: the bounded-control terminal-phase games have the hard bounds but a
+miss-distance payoff and linearized kinematics; primer vector theory has the
+fuel payoff but no adversary; integral-constraint pursuit treats fuel as a
+constraint rather than a payoff.  Accordingly, we believe the following are new,
+while emphasizing that each is assembled from standard parts: the finite-delta-V
+feedback strategy and the $\sqrt{A\rho}$ capture-cost scaling of
+\cref{thm:finite-dv}; the identification of the burn/coast free boundary as an
+adversarial primer vector condition (\cref{sec:equilibrium,sec:coast}); the
+reduction of the game to the two-variable PDE \cref{eq:g-pde}; and the
+domination analysis of acceleration matching in \cref{sec:lateral-suboptimal},
+including the observation that the classical range envelope is nevertheless
+exact on the nominal boost--terminal split.  We make no strong priority claims:
+the pursuit-games literature is vast and scattered, and we would welcome
+pointers to prior appearances of any of these observations.  \jnote{too
+  academically sloppy to claim inability to do a proper literature search}
 
 \section{Existence of a Finite $\Delta v$ Strategy}
 \label{sec:finite-dv}
@@ -422,7 +436,8 @@ missile spends delta-V, as it must.
 \section{Regularity of the Game Value}
 \label{sec:regularity}
 
-The original draft of this section claimed that $V$ is everywhere
+\jnote{this should be a ``claude note'' analogous to the jnote and enote author
+  notes} The original draft of this section claimed that $V$ is everywhere
 differentiable.  That is false as stated: $V$ fails to be even
 \emph{continuous} at the capture set, except on its ``usable part'' in the
 sense of Isaacs \cite{isaacs1965}.  We record the correct statements.
